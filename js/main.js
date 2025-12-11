@@ -180,7 +180,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем отзывы с GitHub — теперь у всех одинаковые!
+    // Загружаем отзывы с GitHub
     function loadReviews() {
         fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json')
             .then(r => r.json())
@@ -188,18 +188,24 @@ function initReviewsWithTelegram() {
                 container.innerHTML = data.length === 0
                     ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
                     : data.map(r => `
-                        <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                            <strong>${r.name}</strong> — ${r.rating} из 5}<br>
-                            <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
-                            <small style="color:#777;">${r.date}</small>
-                        </div>`).join('');
+                        <div class="review-card">
+                            <div class="review-header">
+                                <strong>${r.name}</strong>
+                                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                            </div>
+                            <p>${r.text.replace(/\n/g, '<br>')}</p>
+                            <small>${r.date}</small>
+                        </div>
+                    `).join('');
             })
-            .catch(() => { container.innerHTML = '<p style="color:#c33;">Ошибка загрузки отзывов</p>'; });
+            .catch(() => {
+                container.innerHTML = '<p style="color:#c33;text-align:center;">Не удалось загрузить отзывы</p>';
+            });
     }
 
-    loadReviews(); // сразу при открытии
+    loadReviews();
 
-    // Отправка отзыва — как раньше (в группу)
+    // Отправка отзыва в Telegram
     form.addEventListener('submit', e => {
         e.preventDefault();
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
