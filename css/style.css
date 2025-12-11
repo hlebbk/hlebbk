@@ -503,7 +503,7 @@ body {
     justify-content: center;
     text-align: center;
     color: white;
-    margin-top: 80px; /* под шапку */
+    margin-top: 80px;
 }
 
 .catalog-hero-overlay {
@@ -531,7 +531,7 @@ body {
     color: #ddd;
 }
 
-/* Каталог — убираем лишние отступы */
+
 .catalog-section {
     padding: 80px 0 120px;
     background: #0f0a05;
@@ -541,7 +541,7 @@ body {
     margin-bottom: 60px;
 }
 
-/* Карточки плотнее и красивее */
+
 .catalog-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -595,7 +595,7 @@ body {
     color: #ccc;
 }
 
-/* Фильтры и карточки остаются как были */
+
 .filters { margin-bottom: 60px; justify-content: center; }
 .catalog-grid { 
     display: grid; 
@@ -822,7 +822,7 @@ body {
     will-change: opacity, transform;
 }
 
-/* Скрытые элементы */
+
 [style*="display: none"] {
     opacity: 0 !important;
     transform: translateY(20px) !important;
@@ -1024,7 +1024,7 @@ body {
     text-shadow: 0 0 20px rgba(255,215,0,0.8);
 }
 
-/* Активные  звёзды — золотые */
+
 .stars span.active {
     opacity: 1;
     filter: grayscale(0%);
