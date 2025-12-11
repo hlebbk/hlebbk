@@ -1314,3 +1314,61 @@ _CART-item-name {
     color: #aaa;
     padding: 20px;
 }
+/* ==================== КОРЗИНА С КОЛИЧЕСТВОМ ==================== */
+.cart-item {
+    background: rgba(212,165,116,0.1);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.quantity-controls-cart {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qty-btn-cart {
+    width: 35px;
+    height: 35px;
+    background: rgba(212,165,116,0.3);
+    border: 2px solid #d4a574;
+    color: #d4a574;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.qty-btn-cart:hover {
+    background: #d4a574;
+    color: #000;
+}
+
+.cart-qty {
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    color: #d4a574;
+    font-size: 1.2rem;
+}
+
+.item-total {
+    font-weight: bold;
+    color: #d4a574;
+    min-width: 80px;
+    text-align: right;
+}
+
+.btn-remove {
+    background: #c0392b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+}
