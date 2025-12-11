@@ -159,47 +159,70 @@ function initGlobalSearch() {
 
 // ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (один бот, работает на всех устройствах) ====================
 function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
+    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8'; // твой основной токен
     const CHAT_ID = '-5098369660';
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем отзывы из reviews.json — видно всем
-    function loadReviews() {
+    // Загружаем опубликованные отзывы из reviews.json (общие для всех устройств)
+    function loadPublishedReviews() {
         fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
             .then(r => r.json())
             .then(data => {
                 container.innerHTML = data.length === 0
-                    ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+                    ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
                     : data.map(r => `
                         <div class="review-card">
                             <div class="review-header">
                                 <strong>${r.name}</strong>
                                 <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
                             </div>
-                            <p>${r.text.replace(/\n/g,'<br>')}</p>
+                            <p>${r.text.replace(/\n/g, '<br>')}</p>
                             <small>${r.date}</small>
                         </div>
                     `).join('');
             })
-            .catch(() => console.log('Ошибка загрузки отзывов'));
+            .catch(() => {
+                // Fallback на localStorage, если JSON не загрузился
+                const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                container.innerHTML = published.length === 0
+                    ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+                    : published.map(r => `
+                        <div class="review-card">
+                            <div class="review-header">
+                                <strong>${r.name}</strong>
+                                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                            </div>
+                            <p>${r.text.replace(/\n/g, '<br>')}</p>
+                            <small>${r.date}</small>
+                        </div>
+                    `).join('');
+            });
     }
 
-    loadReviews();
-    setInterval(loadReviews, 30000); // обновляем каждые 30 сек
+    loadPublishedReviews();
 
-    // Отправка отзыва — через прокси (обходит CORS)
-    form.addEventListener('submit', e => {
+    // Отправка отзыва — с прокси для обхода CORS
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
+
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value || 5;
+
         if (!text) return alert('Напишите отзыв!');
 
-        const id = Date.now();
+        const reviewId = Date.now().toString();
 
+        // Сохраняем в pending для модерации (локально)
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        pending.unshift({ id: reviewId, name, rating, text });
+        localStorage.setItem('pending_reviews', JSON.stringify(pending));
+
+        // Формируем сообщение для Telegram
+        const baseUrl = location.href.split('?')[0];
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -207,18 +230,55 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Одобрить → /ok_${id}
-Отклонить → /no_${id}`;
+Опубликовать: ${baseUrl}?approve=${reviewId}
+Отклонить: ${baseUrl}?reject=${reviewId}`;
 
-        // ПРОКСИ-ОТПРАВКА — 100% ДОХОДИТ
+        // Отправка через прокси (обходит CORS)
         const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(
             `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`
         );
-        new Image().src = proxyUrl;
+        fetch(proxyUrl)
+            .then(() => alert('Спасибо! Отзыв отправлен на модерацию'))
+            .catch(() => alert('Ошибка отправки — попробуй ещё раз'));
 
-        // Запасной способ
-        fetch(proxyUrl).then(() => alert('Спасибо! Отзыв отправлен на модерацию')).catch(() => alert('Ошибка отправки — попробуй ещё раз'));
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+
+    // Модерация (approve/reject) — сохраняем в localStorage
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
+
+    if (approve || reject) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const index = pending.findIndex(r => r.id === (approve || reject));
+
+        if (index !== -1) {
+            if (approve) {
+                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
+                localStorage.setItem('published_reviews', JSON.stringify(published));
+            }
+            pending.splice(index, 1);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        }
+        history.replaceState({}, '', location.pathname);
+        location.reload();
+    }
+
+    // Показ отзывов — fallback на localStorage, если JSON не загрузился
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+        : published.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <strong>${r.name}</strong>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
+                <small>${r.date}</small>
+            </div>
+        `).join('');
 }
