@@ -45,24 +45,20 @@
         <h2>Оставьте свой отзыв</h2>
         
         <form id="review-form">
-            <input type="text" id="review-name" placeholder="Ваше имя" required>
-
-            <!-- ВЫБОР ОЦЕНКИ — СУПЕР КРАСИВО -->
-            <div class="rating-select">
-                <label>Ваша оценка:</label>
-                <select id="review-rating" required>
-                    <option value="5" selected>5 — Отлично</option>
-                    <option value="4">4 — Хорошо</option>
-                    <option value="3">3 — Нормально</option>
-                    <option value="2">2 — Плохо</option>
-                    <option value="1">1 — Очень плохо</option>
-                </select>
-            </div>
-
-            <textarea id="review-text" placeholder="Поделитесь впечатлениями..." rows="6" required></textarea>
-            
-            <button type="button" class="btn-primary">Отправить отзыв</button>
-        </form>
+    <input type="text" id="review-name" placeholder="Ваше имя" required>
+    <div class="rating-select">
+        <label>Ваша оценка:</label>
+        <select id="review-rating" required>
+            <option value="5" selected>5 — Отлично</option>
+            <option value="4">4 — Хорошо</option>
+            <option value="3">3 — Нормально</option>
+            <option value="2">2 — Плохо</option>
+            <option value="1">1 — Очень плохо</option>
+        </select>
+    </div>
+    <textarea id="review-text" placeholder="Поделитесь впечатлениями..." rows="6" required></textarea>
+    <button type="submit" class="btn-primary">Отправить отзыв</button>
+</form>
 
         <div class="moderation-note">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#d4a574" stroke-width="2">
