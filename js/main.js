@@ -200,12 +200,7 @@ function initReviewsWithTelegram() {
         // Кнопки для модерации
         const baseUrl = 'https://hlebbk.github.io/hlebbk/reviews.html';
 
-        const message = `Новый отзыв на модерацию
-
-Имя: ${name}
-Оценка: ${rating} из 5
-Отзыв:
-${text}`;
+        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}\n\nдобавить / отклонить`;
 
         // Две красивые кнопки
         const keyboard = {
@@ -228,6 +223,12 @@ ${text}`;
                 text: message,
                 reply_markup: keyboard
             })
+        }).then(response => {
+            if (!response.ok) {
+                console.error('Ошибка отправки в Telegram:', response.statusText);
+            }
+        }).catch(error => {
+            console.error('Ошибка fetch:', error);
         });
 
         alert('Спасибо! Отзыв отправлен на модерацию');
@@ -261,44 +262,6 @@ ${text}`;
     }
 
     // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ===
-    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-    container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
-        : published.map(r => `
-            <div class="review-card">
-                <div class="review-header">
-                    <strong>${r.name}</strong>
-                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                </div>
-                <p>${r.text.replace(/\n/g, '<br>')}</p>
-                <small>${r.date}</small>
-            </div>
-        `).join('');
-}
-
-    // Одобрение
-    const params = new URLSearchParams(window.location.search);
-    const approve = params.get('approve');
-    const reject = params.get('reject');
-
-    if (approve || reject) {
-        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const index = pending.findIndex(r => r.id === (approve || reject));
-
-        if (index !== -1) {
-            if (approve) {
-                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
-                localStorage.setItem('published_reviews', JSON.stringify(published));
-            }
-            pending.splice(index, 1);
-            localStorage.setItem('pending_reviews', JSON.stringify(pending));
-        }
-        history.replaceState({}, '', location.pathname);
-        location.reload();
-    }
-
-    // Показ отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
         ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
