@@ -1,4 +1,4 @@
-// main.js — полный исправленный, всё работает (корзина с количеством, хиты, фильтры, поиск, отзывы, заказы)
+// main.js —  (корзина с количеством, хиты, фильтры, поиск, отзывы, заказы)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initReviewsWithTelegram();
     }
 
-    initCheckoutModal(); // Для модалки заказа
+    initCheckoutModal(); 
 });
 
 // ==================== КОРЗИНА С КОЛИЧЕСТВОМ ====================
@@ -213,7 +213,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем отзывы
+    
     function loadReviews() {
         fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
             .then(r => r.json())
@@ -263,7 +263,7 @@ function initReviewsWithTelegram() {
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем локально
+        
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
@@ -339,7 +339,7 @@ function initCheckoutModal() {
         });
     });
 
-    // Submit заказа с Telegram (с количеством)
+    // Submit заказа с Telegram 
     document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
 
