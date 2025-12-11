@@ -180,7 +180,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Отправка отзыва
+    // === ОТПРАВКА ОТЗЫВА С КНОПКАМИ В TELEGRAM ===
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -197,25 +197,84 @@ function initReviewsWithTelegram() {
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Ссылка для модерации
-        const base = location.href.split('?')[0];
+        // Кнопки для модерации
+        const baseUrl = 'https://hlebbk.github.io/hlebbk/reviews.html';
+
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
 Оценка: ${rating} из 5
 Отзыв:
-${text}
+${text}`;
 
-Опубликовать: ${base}?approve=${reviewId}
-Удалить: ${base}?reject=${reviewId}`;
+        // Две красивые кнопки
+        const keyboard = {
+            inline_keyboard: [
+                [
+                    { text: "Опубликовать", url: `${baseUrl}?approve=${reviewId}` },
+                    { text: "Отклонить", url: `${baseUrl}?reject=${reviewId}` }
+                ]
+            ]
+        };
 
-        // Отправка через <img>
-        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        // Отправляем с кнопками (через прокси, чтобы не было CORS)
+        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
+        )}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                reply_markup: keyboard
+            })
+        });
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+
+    // === МОДЕРАЦИЯ (клик по кнопке) ===
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
+
+    if (approve || reject) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const index = pending.findIndex(r => r.id === (approve || reject));
+
+        if (index !== -1) {
+            if (approve) {
+                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                published.unshift({
+                    ...pending[index],
+                    date: new Date().toLocaleDateString('ru-RU')
+                });
+                localStorage.setItem('published_reviews', JSON.stringify(published));
+            }
+            pending.splice(index, 1);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        }
+        history.replaceState({}, '', 'reviews.html');
+        location.reload();
+    }
+
+    // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ===
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+        : published.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <strong>${r.name}</strong>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
+                <small>${r.date}</small>
+            </div>
+        `).join('');
+}
 
     // Одобрение
     const params = new URLSearchParams(window.location.search);
