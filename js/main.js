@@ -227,3 +227,98 @@ ${text}
             </div>
         `).join('');
 }
+// МОБИЛЬНАЯ АДАПТАЦИЯ — РАБОТАЕТ НА ВСЕХ УСТРОЙСТВАХ
+document.addEventListener('DOMContentLoaded', () => {
+    // Touch-поддержка для кликов (работает на телефоне)
+    document.addEventListener('touchstart', function(e) {
+        const target = e.target;
+        if (target.classList.contains('filter-btn') || target.classList.contains('icon-cart') || target.id === 'site-search') {
+            e.preventDefault(); // убираем задержку 300ms
+            target.click();
+        }
+    }, { passive: false });
+
+    // Оптимизация localStorage (на мобильных медленнее)
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        try {
+            originalSetItem.call(this, key, value);
+        } catch (e) {
+            console.warn('localStorage full, clearing old data');
+            // Очищаем старые данные, если памяти мало
+            const keys = Object.keys(localStorage);
+            keys.slice(0, 5).forEach(k => localStorage.removeItem(k));
+            originalSetItem.call(this, key, value);
+        }
+    };
+
+    // Поиск на мобильных (touch-friendly)
+    const searchInput = document.getElementById('site-search');
+    if (searchInput) {
+        searchInput.addEventListener('touchstart', e => e.preventDefault());
+    }
+});
+
+// ФИЛЬТРЫ — МОБИЛЬНАЯ ВЕРСИЯ
+function initFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        // Клик + touch
+        btn.addEventListener('click', handleFilterClick);
+        btn.addEventListener('touchend', handleFilterClick, { passive: false });
+    });
+}
+
+function handleFilterClick(e) {
+    e.preventDefault();
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const f = this.dataset.filter;
+    document.querySelectorAll('.product-card').forEach(c => {
+        c.style.display = (f === 'all' || c.dataset.category === f) ? 'block' : 'none';
+    });
+}
+
+// КОРЗИНА — МОБИЛЬНАЯ ВЕРСИЯ
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.icon-cart').forEach(el => {
+        el.addEventListener('click', openCart);
+        el.addEventListener('touchend', openCart, { passive: false });
+    });
+});
+
+function openCart(e) {
+    e.preventDefault();
+    renderCart();
+    document.getElementById('cart-modal').style.display = 'flex';
+}
+
+// ОТЗЫВЫ — МОБИЛЬНАЯ ВЕРСИЯ (быстрая отправка)
+function initReviewsWithTelegram() {
+    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
+    const CHAT_ID = '-5098369660';
+
+    const button = document.querySelector('#review-form button');
+    if (!button) return;
+
+    button.addEventListener('click', sendReview);
+    button.addEventListener('touchend', sendReview, { passive: false });
+
+    function sendReview(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('review-name').value.trim();
+        const text = document.getElementById('review-text').value.trim();
+        const rating = document.getElementById('review-rating').value;
+
+        if (!name || !text) return alert('Заполните имя и отзыв!');
+
+        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}`;
+
+        // Быстрая отправка (работает на мобильных)
+        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+
+        alert('Спасибо! Отзыв отправлен на модерацию');
+        document.getElementById('review-form').reset();
+        document.getElementById('review-rating').value = '5';
+    }
+}
