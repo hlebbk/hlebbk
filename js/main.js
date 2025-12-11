@@ -1,4 +1,4 @@
-// main.js — ВСЁ РАБОТАЕТ: корзина, хиты, фильтры, поиск, отзывы
+// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (2025 год)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
@@ -28,7 +28,6 @@ window.addToCart = function(name, price) {
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
-    alert(`Добавлено: ${name}`);
 };
 
 window.removeFromCart = function(i) {
@@ -56,11 +55,9 @@ function renderCart() {
     if (t) t.textContent = sum + ' ₽';
 }
 
-document.querySelectorAll('.icon-cart').forEach(el => {
-    el.onclick = () => {
-        renderCart();
-        document.getElementById('cart-modal').style.display = 'flex';
-    };
+document.querySelectorAll('.icon-cart').forEach(el => el.onclick = () => {
+    renderCart();
+    document.getElementById('cart-modal').style.display = 'flex';
 });
 document.querySelectorAll('.close-cart').forEach(el => el.onclick = () => {
     document.getElementById('cart-modal').style.display = 'none';
@@ -102,7 +99,7 @@ function renderHits() {
     });
 }
 
-// ==================== ФИЛЬТРЫ ====================
+// ==================== ФИЛЬТРЫ, ЦЕНА, ПОИСК ====================
 function initFilters() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -146,7 +143,7 @@ function initGlobalSearch() {
     });
 }
 
-// ==================== ОТЗЫВЫ — ПРОСТО И РАБОТАЕТ ВЕЗДЕ ====================
+// ==================== ОТЗЫВЫ С МОДЕРАЦИЕЙ В TELEGRAM ====================
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
@@ -155,7 +152,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // 1. ОТПРАВКА ОТЗЫВА — работает даже локально!
+    // 1. ОТПРАВКА ОТЗЫВА
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -167,13 +164,13 @@ function initReviewsWithTelegram() {
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем в очередь на модерацию
+        // Сохраняем в очередь
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Ссылка, которая работает и локально, и онлайн
-        const base = location.origin + location.pathname;
+        // Правильная ссылка для одобрения
+        const base = location.href.split('?')[0]; // чистый URL без параметров
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -181,10 +178,10 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Опубликовать → ${base}?approve=${reviewId}
-Удалить → ${base}?reject=${reviewId}`;
+Опубликовать: ${base}?approve=${reviewId}
+Удалить: ${base}?reject=${reviewId}`;
 
-        // 100% рабочий способ — через <img>
+        // Отправка через <img> — работает везде
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
@@ -193,34 +190,31 @@ ${text}
     });
 
     // 2. ОДОБРЕНИЕ И ПУБЛИКАЦИЯ
-    const urlParams = new URLSearchParams(window.location.search);
-    const approve = urlParams.get('approve');
-    const reject = urlParams.get('reject');
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
 
     if (approve || reject) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const idx = pending.findIndex(r => r.id === (approve || reject));
+        const index = pending.findIndex(r => r.id === (approve || reject));
 
-        if (idx > -1) {
+        if (index !== -1) {
             if (approve) {
                 let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({
-                    ...pending[idx],
-                    date: new Date().toLocaleDateString('ru-RU')
-                });
+                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
                 localStorage.setItem('published_reviews', JSON.stringify(published));
             }
-            pending.splice(idx, 1);
+            pending.splice(index, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
-        history.replaceState(null, '', location.pathname);
+        history.replaceState({}, '', location.pathname);
         location.reload();
     }
 
     // 3. ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.4rem;">Пока нет опубликованных отзывов</p>'
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
         : published.map(r => `
             <div class="review-card">
                 <div class="review-header">
