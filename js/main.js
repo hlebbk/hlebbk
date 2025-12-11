@@ -1,4 +1,4 @@
-// main.js — ТВОЙ СТАРЫЙ РАБОЧИЙ КОД + ФИКС ОТЗЫВОВ (без дублей, с красивым рендером)
+// main.js — ПОЛНЫЙ АВТОМАТ ОТЗЫВОВ (2025, один бот, работает на всех устройствах)
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
@@ -157,79 +157,7 @@ function initGlobalSearch() {
     });
 }
 
-// ==================== ОТЗЫВЫ — ФИКС: БЕЗ ДУБЛЕЙ, С КРАСИВЫМ РЕНДЕРОМ И ОТПРАВКОЙ В ТЕЛЕГРАМ ====================
-// ===================================================================
-// ОТЗЫВЫ — РАБОТАЮТ НА ВСЕХ УСТРОЙСТВАХ + ГОТОВЫ К АВТОМАТИЗАЦИИ
-// ===================================================================
-
-function loadGlobalReviews() {
-    const container = document.getElementById('reviews-container');
-    if (!container) return;
-
-    fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
-        .then(r => r.json())
-        .then(reviews => {
-            container.innerHTML = reviews.length === 0
-                ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
-                : reviews.map(r => `
-                    <div class="review-card">
-                        <div class="review-header">
-                            <strong>${r.name}</strong>
-                            <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                        </div>
-                        <p>${r.text.replace(/\n/g,'<br>')}</p>
-                        <small>${r.date}</small>
-                    </div>
-                `).join('');
-        })
-        .catch(() => {
-            container.innerHTML = '<p style="color:#c33;">Ошибка загрузки отзывов</p>';
-        });
-}
-
-function setupReviewForm() {
-    const form = document.getElementById('review-form');
-    if (!form) return;
-
-    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8'; // твой бот
-    const CHAT_ID = '-5098369660';
-
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-
-        const name = document.getElementById('review-name').value.trim() || 'Аноним';
-        const text = document.getElementById('review-text').value.trim();
-        const rating = document.getElementById('review-rating').value || 5;
-
-        if (!text) return alert('Напишите отзыв!');
-
-        const reviewId = Date.now();
-
-        const message = `Новый отзыв на модерацию
-
-Имя: ${name}
-Оценка: ${rating} из 5
-Отзыв:
-${text}
-
-Одобрить → /ok_${reviewId}
-Отклонить → /no_${reviewId}`;
-
-        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
-
-        alert('Спасибо! Отзыв отправлен на модерацию');
-        form.reset();
-        document.getElementById('review-rating').value = '5';
-    });
-}
-
-// Запуск на странице отзывов
-if (window.location.pathname.includes('reviews.html')) {
-    loadGlobalReviews();
-    setupReviewForm();
-    setInterval(loadGlobalReviews, 30000); // обновление каждые 30 сек
-}
-
+// ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (один бот, работает на всех устройствах) ====================
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
     const CHAT_ID = '-5098369660';
@@ -290,9 +218,4 @@ ${text}
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
-}
-
-// Запускаем при загрузке страницы отзывов
-if (window.location.pathname.includes('reviews.html')) {
-    initReviewsWithTelegram();
 }
