@@ -379,3 +379,22 @@ function initCheckoutModal() {
             });
     });
 }
+// ==================== ИЗМЕНЕНИЕ КОЛИЧЕСТВА В КОРЗИНЕ ====================
+window.changeQuantity = function(index, delta) {
+    const newQty = cart[index].quantity + delta;
+    if (newQty < 1) {
+        removeFromCart(index);
+        return;
+    }
+    cart[index].quantity = newQty;
+    localStorage.setItem('bk_cart', JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+};
+
+window.removeFromCart = function(index) {
+    cart.splice(index, 1);
+    localStorage.setItem('bk_cart', JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+};
