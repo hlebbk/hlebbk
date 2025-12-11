@@ -46,7 +46,7 @@ function renderCart() {
     if (t) t.textContent = sum + ' ₽';
 }
 document.addEventListener('click', e => {
-    if (e.target.closest('.icon-cart')) { renderCart(); document.getElementById('cart-modal')?.style = 'display:flex'; }
+    if (e.target.closest('.icon-cart')) { renderCart(); document.getElementById('cart-modal')?.style.display = 'flex'; }
     if (e.target.matches('.close-cart')) document.getElementById('cart-modal').style.display = 'none';
 });
 
@@ -56,9 +56,33 @@ function renderHits() {
     if (!container) return;
     const sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]).slice(0,8);
     container.innerHTML = '';
-    const hitImages = { "Бородинский":"borodinsky.jpg","Дарницкий":"darnitsky.jpg","Батон нарезной":"baton.jpg","С отрубями":"otrubi.jpg","Чёрный хлеб":"cherniy.jpg","Белый хлеб":"beliy.jpg","Сдобные булки":"bulki.jpg","Пончики":"ponchiki.jpg","Ватрушка":"vatrushka.jpg","Плюшки":"plushki.jpg","Кекс":"keks.jpg","Картошка":"pirozhnoe.jpg","Ванильные сухари":"suhari.jpg","Шоколадные сухари":"suhari-shokolad.jpg","Сухари с изюмом":"suhari-izyum.jpg","Сухари с корицей":"suhari-korica.jpg","Баранки простые":"baranki.jpg","Баранки с маком":"baranki-mak.jpg","Бублики с кунжутом":"bubliki.jpg","Сушки в шоколаде":"sushki-shokolad.jpg" };
+    
+    const hitImages = {
+        "Бородинский":"borodinsky.jpg",
+        "Дарницкий":"darnitsky.jpg",
+        "Батон нарезной":"baton.jpg",
+        "С отрубями":"otrubi.jpg",
+        "Чёрный хлеб":"cherniy.jpg",
+        "Белый хлеб":"beliy.jpg",
+        "Сдобные булки":"bulki.jpg",
+        "Пончики":"ponchiki.jpg",
+        "Ватрушка":"vatrushka.jpg",
+        "Плюшки":"plushki.jpg",
+        "Кекс":"keks.jpg",
+        "Картошка":"pirozhnoe.jpg",
+        "Ванильные сухари":"suhari.jpg",
+        "Шоколадные сухари":"suhari-shokolad.jpg",
+        "Сухари с изюмом":"suhari-izyum.jpg",
+        "Сухари с корицей":"suhari-korica.jpg",
+        "Баранки простые":"baranki.jpg",
+        "Баранки с маком":"baranki-mak.jpg",
+        "Бублики с кунжутом":"bubliki.jpg",
+        "Сушки в шоколаде":"sushki-shokolad.jpg"
+    };
+
     const defaultHits = ["Бородинский","Дарницкий","Батон нарезной","Сдобные булки","Ватрушка","Баранки с маком"];
     const hits = sorted.length > 0 ? sorted.map(([n])=>({name:n,price:50})) : defaultHits.map(n=>({name:n,price:50}));
+    
     hits.forEach(item => {
         const img = hitImages[item.name] ? `images/${hitImages[item.name]}` : 'images/default-hit.jpg';
         container.innerHTML += `
@@ -150,7 +174,6 @@ function initReviewsWithTelegram() {
         document.getElementById('review-rating').value = '5';
     };
 
-    // Обработка approve/reject
     const params = new URLSearchParams(location.search);
     if (params.has('approve') || params.has('reject')) {
         const id = params.get('approve') || params.get('reject');
@@ -169,7 +192,6 @@ function initReviewsWithTelegram() {
         location.reload();
     }
 
-    // Показ опубликованных отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     list.innerHTML = published.length === 0
         ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
