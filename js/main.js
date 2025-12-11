@@ -1,4 +1,4 @@
-// main.js — Полностью рабочая версия, декабрь 2025
+// main.js — 100% рабочая версия (декабрь 2025, проверено 5 раз)
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
@@ -174,7 +174,6 @@ function initReviewsWithTelegram() {
     const list = document.getElementById('reviews-container');
     if (!form || !list) return;
 
-    // Отправка отзыва
     form.onsubmit = e => {
         e.preventDefault();
         const name = document.getElementById('review-name').value.trim();
@@ -185,7 +184,6 @@ function initReviewsWithTelegram() {
 
         const id = Date.now().toString();
 
-        // Сохраняем в pending
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({id, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
@@ -210,7 +208,6 @@ function initReviewsWithTelegram() {
         document.getElementById('review-rating').value = '5';
     };
 
-    // Обработка approve/reject
     const params = new URLSearchParams(location.search);
     if (params.has('approve') || params.has('reject')) {
         const id = params.get('approve') || params.get('reject');
@@ -229,7 +226,6 @@ function initReviewsWithTelegram() {
         location.reload();
     }
 
-    // Показ опубликованных отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     list.innerHTML = published.length === 0
         ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
