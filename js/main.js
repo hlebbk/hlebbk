@@ -169,7 +169,6 @@ function initGlobalSearch() {
 function initReviewsWithTelegram() {
     const TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
-    const BASE_URL = 'https://hlebbk.github.io/hlebbk/reviews.html';
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
@@ -186,33 +185,31 @@ function initReviewsWithTelegram() {
 
         const id = Date.now().toString();
 
-        // сохраняем отзыв для модерации
+        // Сохраняем для модерации
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({id, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        const message = `Новый отзыв на модерацию
+        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв: ${text}\n\nОдобрить → /ok_${id}\nОтклонить → /no_${id}`;
 
-Имя: ${name}
-Оценка: ${rating} из 5
-Отзыв: ${text}
+        // АНТИ-CORS: 3 простых GET-запроса через <img> (НИКОГДА не блокируется)
+        const url1 = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        const url2 = 'https://cors-anywhere.herokuapp.com/' + url1; // запасной прокси (если первый не сработает)
+        const url3 = 'https://thingproxy.freeboard.io/fetch/' + url1; // третий прокси
 
-Одобрить → /ok_${id}
-Отклонить → /no_${id}`;
+        new Image().src = url1;
+        new Image().src = url2;
+        new Image().src = url3;
 
-        // САМЫЙ НАДЁЖНЫЙ СПОСОБ — 3 раза подряд (один точно дойдёт)
-        const url = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        // Тест: отправляем короткое сообщение для проверки
+        new Image().src = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=ТЕСТ: Отзыв отправлен (ID: ${id})`;
 
-        new Image().src = 'https://corsproxy.io/?' + encodeURIComponent(url);
-        new Image().src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-        new Image().src = url; // на всякий случай
-
-        alert('Спасибо! Отзыв отправлен на модерацию');
+        alert('Спасибо! Отзыв отправлен на модерацию (проверь группу через 5 сек)');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
 
-    // Модерация по командам /ok_12345 и /no_12345
+    // Модерация по командам /ok_ и /no_
     const params = new URLSearchParams(location.search);
     const okId = params.get('ok');
     const noId = params.get('no');
@@ -239,6 +236,18 @@ function initReviewsWithTelegram() {
         history.replaceState(null, '', 'reviews.html');
         location.reload();
     }
+
+    // Показ отзывов
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+        : published.map(r => `
+            <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <strong>${r.name}</strong> — ${r.rating} из 5<br>
+                <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
+                <small style="color:#777;">${r.date}</small>
+            </div>`).join('');
+}
 
     // Показ опубликованных отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
