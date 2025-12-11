@@ -317,3 +317,100 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
     
     document.getElementById('checkout-modal').style.display = 'none';
 });
+// ==================== ОФОРМЛЕНИЕ ЗАКАЗА + ОТПРАВКА В TELEGRAM ====================
+// Этот код добавлен отдельно и не трогает другие submit-обработчики
+
+// Обработчик кнопки "Оформить заказ" в корзине
+document.querySelectorAll('.btn-checkout').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            alert('Корзина пуста! Добавьте товары перед оформлением.');
+            return;
+        }
+        document.getElementById('cart-modal').style.display = 'none'; // закрываем корзину
+        document.getElementById('checkout-modal').style.display = 'flex'; // открываем оформление
+    });
+});
+
+// Закрытие модалки оформления заказа
+document.querySelector('.close-checkout')?.addEventListener('click', () => {
+    document.getElementById('checkout-modal').style.display = 'none';
+});
+
+document.querySelector('.btn-cancel')?.addEventListener('click', () => {
+    document.getElementById('checkout-modal').style.display = 'none';
+});
+
+// Закрытие при клике вне окна
+document.getElementById('checkout-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('checkout-modal')) {
+        document.getElementById('checkout-modal').style.display = 'none';
+    }
+});
+
+// Переключение способа оплаты
+document.querySelectorAll('.payment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Отправка заказа в Telegram группу
+document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Собираем данные
+    const fio = document.getElementById('fio').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const payment = document.querySelector('.payment-btn.active').textContent;
+    const total = document.getElementById('total-price').textContent;
+
+    // Список товаров
+    let itemsText = 'Товары:\n';
+    if (cart && cart.length > 0) {
+        cart.forEach(item => {
+            const quantity = item.quantity || 1;
+            itemsText += `— ${item.name} × ${quantity} = ${item.price * quantity} ₽\n`;
+        });
+    } else {
+        itemsText += 'Нет товаров\n';
+    }
+
+    // Текст сообщения в Telegram
+    const message = `Новый заказ!\n\n` +
+        `ФИО: ${fio}\n` +
+        `Телефон: ${phone}\n` +
+        `Email: ${email}\n` +
+        `Адрес: ${address}\n` +
+        `Оплата: ${payment}\n` +
+        `Итого: ${total}\n\n` +
+        `${itemsText}`;
+
+    // Отправка через Telegram Bot API
+    const token = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
+    const chatId = '-5098369660';
+    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                alert('Заказ успешно отправлен! Мы свяжемся с вами.');
+                // Очистка корзины
+                cart = [];
+                localStorage.removeItem('bk_cart'); // если ключ другой — подправь
+                updateCartCount();
+                renderCart();
+                document.getElementById('checkout-modal').style.display = 'none';
+                document.getElementById('checkout-form').reset();
+            } else {
+                alert('Ошибка отправки: ' + (data.description || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(err => {
+            alert('Ошибка сети: ' + err.message);
+        });
+});
