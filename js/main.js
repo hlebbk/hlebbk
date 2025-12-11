@@ -264,7 +264,20 @@ function enableReviewDeletion() {
         });
     });
 }
-
+// ==================== УДАЛЕНИЕ ОТЗЫВОВ ====================
+function enableReviewDeletion() {
+    document.querySelectorAll('.delete-review-btn').forEach(btn => {
+        btn.onclick = function() {
+            if (confirm('Удалить этот отзыв навсегда?')) {
+                const id = this.dataset.id;
+                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                published = published.filter(r => r.id !== id);
+                localStorage.setItem('published_reviews', JSON.stringify(published));
+                location.reload(); // обновляем страницу
+            }
+        };
+    });
+}
 // Вспомогательная функция для HTML отзыва
 function createReviewHTML(r) {
     return `
