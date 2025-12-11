@@ -426,3 +426,22 @@ document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
             alert('Ошибка сети: ' + err.message);
         });
 });
+// ==================== ИЗМЕНЕНИЕ КОЛИЧЕСТВА В КОРЗИНЕ ====================
+// Увеличить/уменьшить количество товара в корзине
+function changeCartQuantity(index, delta) {
+    if (cart[index].quantity + delta < 1) {
+        // Если становится 0 — удаляем товар
+        removeFromCart(index);
+        return;
+    }
+    cart[index].quantity += delta;
+    saveCart(); // сохраняем в localStorage (у тебя должна быть такая функция)
+    renderCart(); // перерисовываем корзину
+}
+
+// Удаление товара (если нужно — оставь свою, или используй эту)
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    saveCart();
+    renderCart();
+}
