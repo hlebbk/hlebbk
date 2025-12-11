@@ -338,7 +338,7 @@ function initCheckoutModal() {
             `${itemsText}`;
 
         const token = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-        const chatId = '-1003492673965';  // Твой новый ID
+        const chatId = '-1003492673065';  // Твой новый ID
         const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
 
         fetch(url)
