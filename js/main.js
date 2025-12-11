@@ -16,13 +16,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== КОРЗИНА ====================
+let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
+let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
+
 function updateCartCount() {
     const countEls = document.querySelectorAll('#cart-count');
-    countEls.forEach(el => el.textContent = cart.length);
+    countEls.forEach(el => el.textContent = cart.reduce((sum, item) => sum + 1, 0)); // Подсчёт общего количества (учитывая дубли)
 }
 
-window.addToCart = function(name, price) {
-    cart.push({name, price});
+window.addToCart = function(name, price) {  // ← Экспорт для onclick в HTML
+    cart.push({name, price: parseInt(price)});
     stats[name] = (stats[name] || 0) + 1;
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     localStorage.setItem('bk_stats', JSON.stringify(stats));
@@ -39,47 +42,38 @@ window.removeFromCart = function(i) {
 };
 
 function renderCart() {
-    const cartItemsContainer = document.getElementById('cart-items');
-    cartItemsContainer.innerHTML = ''; // очищаем
-
+    const c = document.getElementById('cart-items');
+    const t = document.getElementById('total-price');
+    if (!c) return;
     if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p class="empty-cart">Корзина пуста</p>';
-        document.getElementById('total-price').textContent = '0 ₽';
-        updateCartCount();
+        c.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
+        if (t) t.textContent = '0 ₽';
         return;
     }
-
-    let total = 0;
-
-    cart.forEach((item, index) => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
-
-        // Создаём блок товара с контролем количества
-        const itemDiv = document.createElement('div');
-        itemDiv.classList.add('cart-item-new'); // новый класс для стилей
-        itemDiv.innerHTML = `
-            <div class="cart-item-info">
-                <span class="cart-item-name">${item.name}</span>
-                <div class="cart-quantity-controls">
-                    <button class="qty-btn-cart minus" onclick="changeCartQuantity(${index}, -1)">–</button>
-                    <span class="cart-qty">${item.quantity}</span>
-                    <button class="qty-btn-cart plus" onclick="changeCartQuantity(${index}, 1)">+</button>
-                </div>
-                <span class="cart-item-price">${item.price} ₽ / шт.</span>
-            </div>
-            <div class="cart-item-total">
-                <span>${itemTotal} ₽</span>
-                <button class="btn-remove" onclick="removeFromCart(${index})">Удалить</button>
-            </div>
-        `;
-        cartItemsContainer.appendChild(itemDiv);
+    let sum = 0;
+    c.innerHTML = '';
+    cart.forEach((item, i) => {
+        sum += item.price;
+        c.innerHTML += `<div class="cart-item"><span>${item.name} — ${item.price} ₽</span><button onclick="removeFromCart(${i})">Удалить</button></div>`;
     });
-
-    document.getElementById('total-price').textContent = total + ' ₽';
-    updateCartCount();
+    if (t) t.textContent = sum + ' ₽';
 }
 
+window.openCart = function() {  // ← Добавь эту функцию для совместимости
+    renderCart();
+    const modal = document.getElementById('cart-modal');
+    if (modal) modal.style.display = 'flex';
+};
+
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('icon-cart')) {
+        openCart();  // Теперь использует функцию
+    }
+    if (e.target.classList.contains('close-cart')) {
+        const modal = document.getElementById('cart-modal');
+        if (modal) modal.style.display = 'none';
+    }
+});
 // ==================== ХИТЫ ПРОДАЖ ====================
 function renderHits() {
     const container = document.querySelector('.hits-grid');
