@@ -1,7 +1,9 @@
-// main.js — ПОЛНЫЙ АВТОМАТ ОТЗЫВОВ (2025, один бот, работает на всех устройствах)
+// main.js — исправленный, всё работает (корзина с количеством, хиты, фильтры, поиск, отзывы, заказы)
+
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
+// Один DOMContentLoaded для всего
 document.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
     renderHits();
@@ -14,14 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
         initReviewsWithTelegram();
     }
 
-    // Фикс для модалки заказа (не конфликтует с корзиной)
-    initCheckoutModal();
+    initCheckoutModal(); // Для модалки заказа
 });
 
-// ==================== КОРЗИНА (восстановлена как была + фиксы) ====================
+// ==================== КОРЗИНА С КОЛИЧЕСТВОМ ====================
 function updateCartCount() {
     const countEls = document.querySelectorAll('#cart-count');
-    countEls.forEach(el => el.textContent = cart.length);
+    const totalQty = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    countEls.forEach(el => el.textContent = totalQty);
 }
 
 window.addToCart = function(name, price) {
@@ -37,31 +39,46 @@ window.addToCart = function(name, price) {
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
-    alert(`Добавлено: ${name} (всего в корзине: ${existingItem ? existingItem.quantity + 1 : 1})`);
+    alert(`Добавлено: ${name} (всего: ${existingItem ? existingItem.quantity + 1 : 1})`);
 };
 
-window.removeFromCart = function(i) {
-    cart.splice(i, 1);
+window.removeFromCart = function(index) {
+    cart.splice(index, 1);
+    localStorage.setItem('bk_cart', JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+};
+
+window.changeQuantity = function(index, delta) {
+    const item = cart[index];
+    const newQty = item.quantity + delta;
+    if (newQty < 1) {
+        removeFromCart(index);
+        return;
+    }
+    item.quantity = newQty;
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     updateCartCount();
     renderCart();
 };
 
 function renderCart() {
-    const c = document.getElementById('cart-items');
-    const t = document.getElementById('total-price');
-    if (!c) return;
+    const container = document.getElementById('cart-items');
+    const totalEl = document.getElementById('total-price');
+    if (!container) return;
+
     if (cart.length === 0) {
-        c.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
-        if (t) t.textContent = '0 ₽';
+        container.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
+        if (totalEl) totalEl.textContent = '0 ₽';
         return;
     }
-    let sum = 0;
-    c.innerHTML = '';
-    cart.forEach((item, i) => {
+
+    let total = 0;
+    container.innerHTML = '';
+    cart.forEach((item, index) => {
         const itemTotal = item.price * item.quantity;
-        sum += itemTotal;
-        c.innerHTML += `
+        total += itemTotal;
+        container.innerHTML += `
             <div class="cart-item">
                 <div class="cart-item-left">
                     <span class="cart-item-name">${item.name}</span>
@@ -69,26 +86,26 @@ function renderCart() {
                 </div>
                 <div class="cart-item-right">
                     <div class="quantity-controls-cart">
-                        <button class="qty-btn-cart minus" onclick="changeQuantity(${i}, -1)">–</button>
+                        <button class="qty-btn-cart minus" onclick="changeQuantity(${index}, -1)">–</button>
                         <span class="cart-qty">${item.quantity}</span>
-                        <button class="qty-btn-cart plus" onclick="changeQuantity(${i}, 1)">+</button>
+                        <button class="qty-btn-cart plus" onclick="changeQuantity(${index}, 1)">+</button>
                     </div>
                     <span class="item-total">${itemTotal} ₽</span>
-                    <button class="btn-remove" onclick="removeFromCart(${i})">Удалить</button>
+                    <button class="btn-remove" onclick="removeFromCart(${index})">Удалить</button>
                 </div>
             </div>
         `;
     });
-    if (t) t.textContent = sum + ' ₽';
+    if (totalEl) totalEl.textContent = total + ' ₽';
 }
 
-window.openCart = function() {  // Глобальная для клика на иконку
+window.openCart = function() {
     renderCart();
     const modal = document.getElementById('cart-modal');
     if (modal) modal.style.display = 'flex';
 };
 
-// Event listeners для корзины (не конфликтуют)
+// Клик на иконку корзины и закрытие
 document.addEventListener('click', (e) => {
     if (e.target.closest('.icon-cart')) {
         openCart();
