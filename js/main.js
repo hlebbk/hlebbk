@@ -205,7 +205,9 @@ function initReviewsWithTelegram() {
 Имя: ${name}
 Оценка: ${rating} из 5
 Отзыв:
-${text}`;
+${text}
+
+добавить / отклонить`;
 
         // Две красивые кнопки
         const keyboard = {
