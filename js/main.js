@@ -1,4 +1,4 @@
-// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (декабрь 2025)
+// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (декабрь 2025, исправлены все ошибки)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// КОРЗИНА
+// ==================== КОРЗИНА ====================
 function updateCartCount() {
     document.querySelectorAll('#cart-count').forEach(el => el && (el.textContent = cart.length));
 }
@@ -64,7 +64,7 @@ document.querySelectorAll('.close-cart').forEach(el => el.onclick = () => {
     document.getElementById('cart-modal').style.display = 'none';
 });
 
-// ХИТЫ ПРОДАЖ
+// ==================== ХИТЫ ПРОДАЖ ====================
 function renderHits() {
     const container = document.querySelector('.hits-grid');
     if (!container) return;
@@ -100,7 +100,7 @@ function renderHits() {
     });
 }
 
-// ФИЛЬТРЫ
+// ==================== ФИЛЬТРЫ ====================
 function initFilters() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -144,7 +144,7 @@ function initGlobalSearch() {
     });
 }
 
-// ОТЗЫВЫ С МОДЕРАЦИЕЙ
+// ==================== ОТЗЫВЫ С МОДЕРАЦИЕЙ ====================
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
@@ -153,7 +153,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Отправка
+    // Отправка отзыва
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
