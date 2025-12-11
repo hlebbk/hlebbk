@@ -97,7 +97,44 @@
             </div>
         </div>
     </div>
+<!-- МОДАЛЬНОЕ ОКНО ОФОРМЛЕНИЯ ЗАКАЗА -->
+<div id="checkout-modal" class="checkout-modal">
+    <div class="checkout-content">
+        <div class="checkout-header">
+            <h2>Оформление заказа</h2>
+            <span class="close-checkout">×</span>
+        </div>
+        <form id="checkout-form" class="checkout-form">
+            <label for="fio">ФИО *</label>
+            <input type="text" id="fio" placeholder="Иванов Иван Иванович" required>
 
+            <label for="phone">Телефон *</label>
+            <input type="tel" id="phone" placeholder="+7 (999) 999-99-99" required>
+
+            <label for="email">Email *</label>
+            <input type="email" id="email" placeholder="example@mail.ru" required>
+            <p class="hint">На эту почту придёт подтверждение заказа</p>
+
+            <label for="address">Адрес доставки *</label>
+            <input type="text" id="address" placeholder="г. Большой Камень, ул. Приморская, д. 34, кв. 52" required>
+
+            <label>Способ оплаты *</label>
+            <div class="payment-options">
+                <button type="button" class="payment-btn active">Наличные</button>
+                <button type="button" class="payment-btn">Безналичный</button>
+            </div>
+
+            <div class="contact-info">
+                <p>Наш телефон для связи:</p>
+                <p>+7 (924) 257 17 66</p>
+                <p>Звоните с 9:00 до 18:00</p>
+            </div>
+
+            <button type="submit" class="btn-confirm">Подтвердить заказ</button>
+            <button type="button" class="btn-cancel">Отмена</button>
+        </form>
+    </div>
+</div>
     <script src="js/main.js"></script>
 </body>
 </html>
