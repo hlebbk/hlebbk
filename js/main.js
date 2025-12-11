@@ -1,4 +1,4 @@
-// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (2025 год)
+// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (декабрь 2025)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ==================== КОРЗИНА ====================
+// КОРЗИНА
 function updateCartCount() {
     document.querySelectorAll('#cart-count').forEach(el => el && (el.textContent = cart.length));
 }
@@ -28,6 +28,7 @@ window.addToCart = function(name, price) {
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
+    alert(`Добавлено: ${name}`);
 };
 
 window.removeFromCart = function(i) {
@@ -63,7 +64,7 @@ document.querySelectorAll('.close-cart').forEach(el => el.onclick = () => {
     document.getElementById('cart-modal').style.display = 'none';
 });
 
-// ==================== ХИТЫ ПРОДАЖ ====================
+// ХИТЫ ПРОДАЖ
 function renderHits() {
     const container = document.querySelector('.hits-grid');
     if (!container) return;
@@ -99,7 +100,7 @@ function renderHits() {
     });
 }
 
-// ==================== ФИЛЬТРЫ, ЦЕНА, ПОИСК ====================
+// ФИЛЬТРЫ
 function initFilters() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -143,7 +144,7 @@ function initGlobalSearch() {
     });
 }
 
-// ==================== ОТЗЫВЫ С МОДЕРАЦИЕЙ В TELEGRAM ====================
+// ОТЗЫВЫ С МОДЕРАЦИЕЙ
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
@@ -152,7 +153,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // 1. ОТПРАВКА ОТЗЫВА
+    // Отправка
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -169,8 +170,8 @@ function initReviewsWithTelegram() {
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Правильная ссылка для одобрения
-        const base = location.href.split('?')[0]; // чистый URL без параметров
+        // Ссылка для модерации
+        const base = location.href.split('?')[0];
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -181,7 +182,7 @@ ${text}
 Опубликовать: ${base}?approve=${reviewId}
 Удалить: ${base}?reject=${reviewId}`;
 
-        // Отправка через <img> — работает везде
+        // Отправка через <img>
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
@@ -189,7 +190,7 @@ ${text}
         document.getElementById('review-rating').value = '5';
     });
 
-    // 2. ОДОБРЕНИЕ И ПУБЛИКАЦИЯ
+    // Одобрение
     const params = new URLSearchParams(window.location.search);
     const approve = params.get('approve');
     const reject = params.get('reject');
@@ -211,8 +212,7 @@ ${text}
         location.reload();
     }
 
-    // 3. ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ
-        // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ + КНОПКА УДАЛЕНИЯ ===
+    // Показ отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
         ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
@@ -224,67 +224,6 @@ ${text}
                 </div>
                 <p>${r.text.replace(/\n/g, '<br>')}</p>
                 <small>${r.date}</small>
-                <button class="delete-review-btn" data-id="${r.id}" style="
-                    margin-top: 12px;
-                    padding: 8px 16px;
-                    background: #a00;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                ">Удалить отзыв</button>
             </div>
         `).join('');
-
-    // Включаем возможность удаления
-    enableReviewDeletion();
-// ==================== УДАЛЕНИЕ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ====================
-function enableReviewDeletion() {
-    // Находим все кнопки удаления
-    document.querySelectorAll('.delete-review-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (!confirm('Удалить этот отзыв навсегда?')) return;
-
-            const reviewId = this.dataset.id;
-
-            let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-            published = published.filter(r => r.id !== reviewId);
-            localStorage.setItem('published_reviews', JSON.stringify(published));
-
-            // Обновляем отображение
-            const container = document.getElementById('reviews-container');
-            if (published.length === 0) {
-                container.innerHTML = '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>';
-            } else {
-                container.innerHTML = published.map(r => createReviewHTML(r)).join('');
-            }
-
-            enableReviewDeletion(); // перепривязываем кнопки
-        });
-    });
-}
-
-// Вспомогательная функция для HTML отзыва
-function createReviewHTML(r) {
-    return `
-        <div class="review-card">
-            <div class="review-header">
-                <strong>${r.name}</strong>
-                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-            </div>
-            <p>${r.text.replace(/\n/g, '<br>')}</p>
-            <small>${r.date}</small>
-            <button class="delete-review-btn" data-id="${r.id}" style="
-                margin-top: 12px;
-                padding: 8px 16px;
-                background: #8b0000;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.9rem;
-            ">Удалить отзыв</button>
-        </div>
-    `;
 }
