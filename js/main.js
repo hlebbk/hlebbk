@@ -203,8 +203,7 @@ function setupReviewForm() {
 
         if (!text) return alert('Напишите отзыв!');
 
-        const reviewData = {name, rating, text, date: new Date().toLocaleDateString('ru-RU')};
-        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(reviewData))));
+        const reviewId = Date.now();
 
         const message = `Новый отзыв на модерацию
 
@@ -213,8 +212,8 @@ function setupReviewForm() {
 Отзыв:
 ${text}
 
-Чтобы опубликовать — пришли боту команду:
-/add ${encoded}`;
+Одобрить → /ok_${reviewId}
+Отклонить → /no_${reviewId}`;
 
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
@@ -224,8 +223,9 @@ ${text}
     });
 }
 
-// Запуск при загрузке страницы отзывов
+// Запуск на странице отзывов
 if (window.location.pathname.includes('reviews.html')) {
     loadGlobalReviews();
     setupReviewForm();
+    setInterval(loadGlobalReviews, 30000); // обновление каждые 30 сек
 }
