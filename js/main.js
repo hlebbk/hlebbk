@@ -1,4 +1,4 @@
-// main.js — исправленный, всё работает (корзина с количеством, хиты, фильтры, поиск, отзывы, заказы)
+// main.js — полный исправленный, всё работает (корзина с количеством, хиты, фильтры, поиск, отзывы, заказы)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
@@ -66,13 +66,11 @@ function renderCart() {
     const container = document.getElementById('cart-items');
     const totalEl = document.getElementById('total-price');
     if (!container) return;
-
     if (cart.length === 0) {
         container.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
         if (totalEl) totalEl.textContent = '0 ₽';
         return;
     }
-
     let total = 0;
     container.innerHTML = '';
     cart.forEach((item, index) => {
@@ -116,7 +114,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ==================== ХИТЫ ПРОДАЖ (как было) ====================
+// ==================== ХИТЫ ПРОДАЖ ====================
 function renderHits() {
     const container = document.querySelector('.hits-grid');
     if (!container) return;
@@ -152,7 +150,7 @@ function renderHits() {
     });
 }
 
-// ==================== ФИЛЬТРЫ КАТАЛОГА (как было) ====================
+// ==================== ФИЛЬТРЫ КАТАЛОГА ====================
 function initFilters() {
     const buttons = document.querySelectorAll('.filter-btn');
     if (buttons.length === 0) return;
@@ -194,7 +192,7 @@ function initPriceFilter() {
     }
 }
 
-// ==================== ГЛОБАЛЬНЫЙ ПОИСК (как было) ====================
+// ==================== ГЛОБАЛЬНЫЙ ПОИСК ====================
 function initGlobalSearch() {
     const input = document.getElementById('site-search');
     if (!input) return;
@@ -206,16 +204,16 @@ function initGlobalSearch() {
     });
 }
 
-// ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (как было) ====================
+// ==================== ОТЗЫВЫ ====================
 function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const CHAT_ID = '-1003492673965';
+    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
+    const CHAT_ID = '-1003492673065';  // Твой ID для отзывов
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем отзывы из reviews.json — видно всем
+    // Загружаем отзывы
     function loadReviews() {
         fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
             .then(r => r.json())
@@ -234,7 +232,7 @@ function initReviewsWithTelegram() {
                     `).join('');
             })
             .catch(() => {
-                // Fallback на localStorage
+                // Fallback localStorage
                 const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
                 container.innerHTML = published.length === 0
                     ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
@@ -253,7 +251,7 @@ function initReviewsWithTelegram() {
 
     loadReviews();
 
-    // Отправка отзыва — через прокси (обходит CORS, 100% доходит)
+    // Отправка отзыва
     form.addEventListener('submit', e => {
         e.preventDefault();
 
@@ -265,27 +263,16 @@ function initReviewsWithTelegram() {
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем локально для модерации
+        // Сохраняем локально
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        const message = `Новый отзыв на модерацию
+        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}\n\nОпубликовать: https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}\nОтклонить: https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
 
-Имя: ${name}
-Оценка: ${rating} из 5
-Отзыв:
-${text}
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
-Опубликовать: https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
-Отклонить: https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
-
-        // ПРОКСИ-ОТПРАВКА — 100% ДОХОДИТ (обходит CORS)
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(
-            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`
-        );
-
-        fetch(proxyUrl)
+        fetch(url)
             .then(() => alert('Спасибо! Отзыв отправлен на модерацию'))
             .catch(() => alert('Ошибка отправки — попробуй ещё раз'));
 
@@ -293,7 +280,7 @@ ${text}
         document.getElementById('review-rating').value = '5';
     });
 
-    // Модерация (approve/reject)
+    // Модерация
     const params = new URLSearchParams(location.search);
     const approve = params.get('approve');
     const reject = params.get('reject');
@@ -316,12 +303,12 @@ ${text}
     }
 }
 
-// ==================== ОФОРМЛЕНИЕ ЗАКАЗА + TELEGRAM (интегрировано без конфликтов) ====================
+// ==================== ОФОРМЛЕНИЕ ЗАКАЗА ====================
 function initCheckoutModal() {
     document.querySelectorAll('.btn-checkout').forEach(btn => {
         btn.addEventListener('click', () => {
             if (cart.length === 0) {
-                alert('Корзина пуста! Добавьте товары.');
+                alert('Корзина пуста!');
                 return;
             }
             document.getElementById('cart-modal').style.display = 'none';
@@ -329,7 +316,7 @@ function initCheckoutModal() {
         });
     });
 
-    // Закрытие
+    // Закрытие модалки
     document.querySelector('.close-checkout')?.addEventListener('click', () => {
         document.getElementById('checkout-modal').style.display = 'none';
     });
@@ -352,8 +339,7 @@ function initCheckoutModal() {
         });
     });
 
-    
-       // Submit заказа с Telegram (улучшенный список товаров с количеством)
+    // Submit заказа с Telegram (с количеством)
     document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -364,7 +350,6 @@ function initCheckoutModal() {
         const payment = document.querySelector('.payment-btn.active').textContent;
         const total = document.getElementById('total-price').textContent;
 
-        // Улучшенный список товаров с количеством и суммой по строке
         let itemsText = 'Товары:\n';
         if (cart.length > 0) {
             cart.forEach(item => {
@@ -385,14 +370,14 @@ function initCheckoutModal() {
             `${itemsText}`;
 
         const token = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-        const chatId = '-1003492673065';  // Твой актуальный ID
+        const chatId = '-1003492673065';
         const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
 
         fetch(url)
             .then(res => res.json())
             .then(data => {
                 if (data.ok) {
-                    alert('Заказ успешно отправлен! Мы свяжемся с вами.');
+                    alert('Заказ успешно отправлен!');
                     cart = [];
                     localStorage.removeItem('bk_cart');
                     updateCartCount();
@@ -400,31 +385,11 @@ function initCheckoutModal() {
                     document.getElementById('checkout-modal').style.display = 'none';
                     document.getElementById('checkout-form').reset();
                 } else {
-                    alert('Ошибка отправки: ' + (data.description || 'Неизвестная ошибка'));
+                    alert('Ошибка отправки: ' + (data.description || 'Неизвестная'));
                 }
             })
             .catch(err => {
                 alert('Ошибка сети: ' + err.message);
             });
     });
-// ==================== ИЗМЕНЕНИЕ КОЛИЧЕСТВА В КОРЗИНЕ ====================
-// Изменение количества в корзине
-window.changeQuantity = function(index, delta) {
-    const newQty = cart[index].quantity + delta;
-    if (newQty < 1) {
-        removeFromCart(index);
-        return;
-    }
-    cart[index].quantity = newQty;
-    localStorage.setItem('bk_cart', JSON.stringify(cart));
-    updateCartCount();
-    renderCart();
-};
-
-// Удаление товара
-window.removeFromCart = function(index) {
-    cart.splice(index, 1);
-    localStorage.setItem('bk_cart', JSON.stringify(cart));
-    updateCartCount();
-    renderCart();
-};
+}
