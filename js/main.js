@@ -180,7 +180,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // === 1. ОТПРАВКА ОТЗЫВА — СРАЗУ НА САЙТ + В TELEGRAM ===
+    // === 1. ОТПРАВКА ОТЗЫВА ===
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -188,57 +188,81 @@ function initReviewsWithTelegram() {
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value;
 
-        if (!name || !text) {
-            alert('Заполните имя и отзыв!');
-            return;
-        }
+        if (!name || !text) return alert('Заполните имя и отзыв!');
 
-        const newReview = {
-            id: Date.now().toString(),
-            name: name,
-            rating: parseInt(rating),
-            text: text,
-            date: new Date().toLocaleDateString('ru-RU')
-        };
+        const reviewId = Date.now().toString();
 
-        // 1. Сразу добавляем на сайт
-        let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-        published.unshift(newReview);
-        localStorage.setItem('published_reviews', JSON.stringify(published));
+        // Сохраняем в очередь на модерацию
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        pending.unshift({ id: reviewId, name, rating, text });
+        localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // 2. Обновляем отображение
-        container.innerHTML = published.map(r => `
-            <div class="review-card">
-                <div class="review-header">
-                    <strong>${r.name}</strong>
-                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                </div>
-                <p>${r.text.replace(/\n/g, '<br>')}</p>
-                <small>${r.date}</small>
-            </div>
-        `).join('');
+        // Ссылка на сайт с параметром
+        const base = 'https://hlebbk.github.io/hlebbk/reviews.html';
 
-        // 3. Отправляем тебе в Telegram (чтобы ты знал)
-        const message = `Новый отзыв на сайте!
+        const message = `Новый отзыв на модерацию
 
 Имя: ${name}
 Оценка: ${rating} из 5
 Отзыв:
-${text}
+${text}`;
 
-Ссылка: https://hlebbk.github.io/hlebbk/reviews.html`;
+        // Кнопки прямо в Telegram
+        const keyboard = {
+            inline_keyboard: [[
+                { text: "Опубликовать", url: `${base}?approve=${reviewId}` },
+                { text: "Отклонить", url: `${base}?reject=${reviewId}` }
+            ]]
+        };
 
-        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        // Отправляем с кнопками
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                reply_markup: keyboard
+            })
+        });
 
-        alert('Спасибо! Ваш отзыв опубликован!');
+        alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
 
-    // === 2. ПОКАЗ ОТЗЫВОВ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ ===
+    // === 2. МОДЕРАЦИЯ (одобрение / отклонение) ===
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
+
+    if (approve || reject) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const index = pending.findIndex(r => r.id === (approve || reject));
+
+        if (index !== -1) {
+            if (approve) {
+                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                published.unshift({
+                    ...pending[index],
+                    date: new Date().toLocaleDateString('ru-RU')
+                });
+                localStorage.setItem('published_reviews', JSON.stringify(published));
+            }
+            // Удаляем из очереди в любом случае
+            pending.splice(index, 1);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        }
+
+        // Чистим URL и обновляем страницу
+        history.replaceState({}, '', 'reviews.html');
+        location.reload();
+    }
+
+    // === 3. ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ===
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет отзывов. Будьте первым!</p>'
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
         : published.map(r => `
             <div class="review-card">
                 <div class="review-header">
