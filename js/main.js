@@ -168,13 +168,13 @@ function initGlobalSearch() {
 // === ОТЗЫВЫ — ПРОСТО И НАДЁЖНО (2025) ===
 function initReviewsWithTelegram() {
     const TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const CHAT_ID = '-5098369660'; // твоя группа
+    const CHAT_ID = '-5098369660';
+    const BASE_URL = 'https://hlebbk.github.io/hlebbk/reviews.html';
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // 1. Отправка отзыва с сайта
     form.addEventListener('submit', e => {
         e.preventDefault();
 
@@ -186,12 +186,11 @@ function initReviewsWithTelegram() {
 
         const id = Date.now().toString();
 
-        // сохраняем в очередь
+        // сохраняем на модерацию
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({id, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // красивое сообщение в группу
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -202,16 +201,21 @@ function initReviewsWithTelegram() {
 Одобрить → /approve_${id}
 Отклонить → /reject_${id}`;
 
-        // отправляем через Telegram API напрямую (allorigins больше не нужен)
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        // Способ 1 — через allorigins (самый надёжный)
+        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(
+            `https://api.telegram.org/bot${TOKEN}/sendMessage`
+        ), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                chat_id: CHAT,
-                text: message,
-                parse_mode: 'HTML'
+                chat_id: CHAT_ID,
+                text: message
             })
         }).catch(() => {});
+
+        // Способ 2 — запасной через <img> (никогда не блокируется)
+        const img = new Image();
+        img.src = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
