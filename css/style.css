@@ -1314,17 +1314,38 @@ _CART-item-name {
     color: #aaa;
     padding: 20px;
 }
-/* ==================== КОРЗИНА С КОЛИЧЕСТВОМ ==================== */
+/* ==================== НОВАЯ КОРЗИНА С КОЛИЧЕСТВОМ ==================== */
 .cart-item {
     background: rgba(212,165,116,0.1);
     border-radius: 15px;
     padding: 15px;
     margin-bottom: 15px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.cart-item-left {
+    flex: 1;
+}
+
+.cart-item-name {
+    display: block;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.cart-item-price {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.cart-item-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .quantity-controls-cart {
@@ -1334,14 +1355,17 @@ _CART-item-name {
 }
 
 .qty-btn-cart {
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     background: rgba(212,165,116,0.3);
     border: 2px solid #d4a574;
     color: #d4a574;
     border-radius: 50%;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .qty-btn-cart:hover {
@@ -1353,8 +1377,8 @@ _CART-item-name {
     min-width: 40px;
     text-align: center;
     font-weight: bold;
-    color: #d4a574;
     font-size: 1.2rem;
+    color: #d4a574;
 }
 
 .item-total {
@@ -1371,4 +1395,5 @@ _CART-item-name {
     padding: 8px 15px;
     border-radius: 20px;
     cursor: pointer;
+    font-size: 0.9rem;
 }
