@@ -186,7 +186,7 @@ function initReviewsWithTelegram() {
 
         const id = Date.now().toString();
 
-        // сохраняем на модерацию
+        // сохраняем отзыв для модерации
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({id, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
@@ -197,58 +197,60 @@ function initReviewsWithTelegram() {
 Оценка: ${rating} из 5
 Отзыв: ${text}
 
-Команды:
-Одобрить → /approve_${id}
-Отклонить → /reject_${id}`;
+Одобрить → /ok_${id}
+Отклонить → /no_${id}`;
 
-        // Способ 1 — через allorigins (самый надёжный)
-        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(
-            `https://api.telegram.org/bot${TOKEN}/sendMessage`
-        ), {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message
-            })
-        }).catch(() => {});
+        // САМЫЙ НАДЁЖНЫЙ СПОСОБ — 3 раза подряд (один точно дойдёт)
+        const url = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
-        // Способ 2 — запасной через <img> (никогда не блокируется)
-        const img = new Image();
-        img.src = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        new Image().src = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        new Image().src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        new Image().src = url; // на всякий случай
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
 
-    // 2. Обработка команд /approve_xxx и /reject_xxx (ты пишешь в группу)
-    // Это работает через getUpdates — проверяет последние сообщения
-    function checkCommands() {
-        fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?limit=20&offset=-1`)
-            .then(r => r.json())
-            .then(data => {
-                if (!data.ok || !data.result) return;
+    // Модерация по командам /ok_12345 и /no_12345
+    const params = new URLSearchParams(location.search);
+    const okId = params.get('ok');
+    const noId = params.get('no');
 
-                data.result.reverse().forEach(update => {
-                    if (!update.message || !update.message.text) return;
-                    const text = update.message.text.trim();
-                    const chatId = update.message.chat.id.toString();
+    if (okId || noId) {
+        const id = okId || noId;
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const idx = pending.findIndex(r => r.id === id);
 
-                    // принимаем команды только из твоей группы
-                    if (chatId !== CHAT) return;
-
-                    if (text.startsWith('/approve_')) {
-                        const id = text.split('_')[1];
-                        approveReview(id);
-                    } else if (text.startsWith('/reject_')) {
-                        const id = text.split('_')[1];
-                        rejectReview(id);
-                    }
+        if (idx > -1) {
+            if (okId) {
+                let pub = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                pub.unshift({
+                    name: pending[idx].name,
+                    text: pending[idx].text,
+                    rating: pending[idx].rating,
+                    date: new Date().toLocaleDateString('ru-RU')
                 });
-            })
-            .catch(() => {});
+                localStorage.setItem('published_reviews', JSON.stringify(pub));
+            }
+            pending.splice(idx, 1);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        }
+        history.replaceState(null, '', 'reviews.html');
+        location.reload();
     }
+
+    // Показ опубликованных отзывов
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+        : published.map(r => `
+            <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <strong>${r.name}</strong> — ${r.rating} из 5<br>
+                <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
+                <small style="color:#777;">${r.date}</small>
+            </div>`).join('');
+}
 
     function approveReview(id) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
