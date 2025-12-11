@@ -335,7 +335,8 @@ function initCheckoutModal() {
         });
     });
 
-    // Submit заказа с Telegram
+    
+       // Submit заказа с Telegram (улучшенный список товаров с количеством)
     document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -346,22 +347,28 @@ function initCheckoutModal() {
         const payment = document.querySelector('.payment-btn.active').textContent;
         const total = document.getElementById('total-price').textContent;
 
+        // Улучшенный список товаров с количеством и суммой по строке
         let itemsText = 'Товары:\n';
-        cart.forEach(item => {
-            itemsText += `- ${item.name} — ${item.price} ₽\n`;
-        });
+        if (cart.length > 0) {
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                itemsText += `— ${item.name} × ${item.quantity} = ${itemTotal} ₽\n`;
+            });
+        } else {
+            itemsText += 'Нет товаров\n';
+        }
 
         const message = `Новый заказ!\n\n` +
             `ФИО: ${fio}\n` +
             `Телефон: ${phone}\n` +
             `Email: ${email}\n` +
-            `Адрес: ${address}\n` +
+            `Адрес доставки: ${address}\n` +
             `Оплата: ${payment}\n` +
             `Итого: ${total}\n\n` +
             `${itemsText}`;
 
         const token = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-        const chatId = '-1003492673065';  // Твой новый ID
+        const chatId = '-1003492673065';  // Твой актуальный ID
         const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
 
         fetch(url)
@@ -376,14 +383,13 @@ function initCheckoutModal() {
                     document.getElementById('checkout-modal').style.display = 'none';
                     document.getElementById('checkout-form').reset();
                 } else {
-                    alert('Ошибка отправки: ' + (data.description || 'Неизвестная'));
+                    alert('Ошибка отправки: ' + (data.description || 'Неизвестная ошибка'));
                 }
             })
             .catch(err => {
                 alert('Ошибка сети: ' + err.message);
             });
     });
-}
 // ==================== ИЗМЕНЕНИЕ КОЛИЧЕСТВА В КОРЗИНЕ ====================
 // Изменение количества в корзине
 window.changeQuantity = function(index, delta) {
