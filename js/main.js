@@ -266,3 +266,54 @@ ${text}
         location.reload();
     }
 }
+// ==================== ОФОРМЛЕНИЕ ЗАКАЗА ====================
+document.querySelectorAll('.btn-checkout').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            alert('Корзина пуста! Добавьте товары.');
+            return;
+        }
+        document.getElementById('cart-modal').style.display = 'none'; // Закрываем корзину
+        document.getElementById('checkout-modal').style.display = 'flex'; // Открываем оформление
+    });
+});
+
+// Закрытие модалки оформления
+document.querySelector('.close-checkout').addEventListener('click', () => {
+    document.getElementById('checkout-modal').style.display = 'none';
+});
+
+document.querySelector('.btn-cancel').addEventListener('click', () => {
+    document.getElementById('checkout-modal').style.display = 'none';
+});
+
+// Закрытие при клике вне контента
+document.getElementById('checkout-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('checkout-modal')) {
+        document.getElementById('checkout-modal').style.display = 'none';
+    }
+});
+
+// Выбор оплаты
+document.querySelectorAll('.payment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Обработка формы (пока alert + очистка корзины)
+document.getElementById('checkout-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const payment = document.querySelector('.payment-btn.active').textContent;
+    const total = document.getElementById('total-price').textContent;
+    alert(`Заказ оформлен на сумму ${total}!\nСпособ оплаты: ${payment}\nМы свяжемся с вами скоро.`);
+    
+    // Очистка корзины
+    cart = [];
+    localStorage.removeItem('bk_cart');
+    updateCartCount();
+    renderCart();
+    
+    document.getElementById('checkout-modal').style.display = 'none';
+});
