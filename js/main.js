@@ -180,25 +180,23 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Отправка отзыва
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const name = document.getElementById('review-name').value.trim();
+        const name = document.getElementById('review-name').value.trim() || 'Аноним';
         const text = document.getElementById('review-text').value.trim();
-        const rating = document.getElementById('review-rating').value;
+        const rating = document.getElementById('review-rating').value || 5;
 
-        if (!name || !text) return alert('Заполните имя и отзыв!');
+        if (!text) return alert('Напишите отзыв!');
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем в очередь
+        // Сохраняем в localStorage (как было)
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({ id: reviewId, name, rating, text });
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Ссылка для модерации
-        const base = location.href.split('?')[0];
+        // Формируем текст БЕЗ звёздочек — только цифры
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -206,51 +204,55 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Опубликовать: ${base}?approve=${reviewId}
-Удалить: ${base}?reject=${reviewId}`;
+Одобрить → /ok_${reviewId}
+Отклонить → /no_${reviewId}`;
 
-        // Отправка через <img>
-        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        // САМЫЙ НАДЁЖНЫЙ СПОСОБ — img.src + 3 прокси
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+        new Image().src = url;
+        new Image().src = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        new Image().src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
 
-    // Одобрение
-    const params = new URLSearchParams(window.location.search);
-    const approve = params.get('approve');
-    const reject = params.get('reject');
+    // Модерация по /ok_ и /no_
+    const params = new URLSearchParams(location.search);
+    const okId = params.get('ok');
+    const noId = params.get('no');
 
-    if (approve || reject) {
+    if (okId || noId) {
+        const id = okId || noId;
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const index = pending.findIndex(r => r.id === (approve || reject));
-
-        if (index !== -1) {
-            if (approve) {
+        const idx = pending.findIndex(r => r.id === id);
+        if (idx > -1) {
+            if (okId) {
                 let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
+                published.unshift({
+                    name: pending[idx].name,
+                    text: pending[idx].text,
+                    rating: pending[idx].rating,
+                    date: new Date().toLocaleDateString('ru-RU')
+                });
                 localStorage.setItem('published_reviews', JSON.stringify(published));
             }
-            pending.splice(index, 1);
+            pending.splice(idx, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
-        history.replaceState({}, '', location.pathname);
+        history.replaceState(null, '', 'reviews.html');
         location.reload();
     }
 
-    // Показ отзывов
+    // Показ отзывов (как было)
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+        ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
         : published.map(r => `
-            <div class="review-card">
-                <div class="review-header">
-                    <strong>${r.name}</strong>
-                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                </div>
-                <p>${r.text.replace(/\n/g, '<br>')}</p>
+            <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <strong>${r.name}</strong> — ${r.rating} из 5<br>
+                <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
                 <small>${r.date}</small>
-            </div>
-        `).join('');
+            </div>`).join('');
 }
