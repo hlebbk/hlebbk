@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог | Хлебокомбинат Большой Камень</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ШАПКА -->
+    <header class="header">
+        <div class="logo-big">ХЛЕБОКОМБИНАТ</div>
+        <nav class="main-nav">
+    <a href="index.html">Главная</a>
+    <a href="about.html">О нас</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="contacts.html">Контакты</a>
+    <a href="reviews.html">Отзывы</a>  
+</nav>
+        <div class="header-right">
+            <div class="search-box">
+                <input type="text" id="site-search" placeholder="Поиск по сайту...">
+                <button type="button">Поиск</button>
+            </div>
+            <div class="icons">
+                
+                <div class="icon-cart" onclick="openCart()">Корзина <span id="cart-count">0</span></div>
+            </div>
+        </div>
+    </header>
+
+    
+   <!-- КАТАЛОГ С ВИДЕО-ФОНОМ -->
+<section class="catalog video-catalog">
+    <!-- Видео-фон -->
+    <video class="catalog-video-bg" autoplay muted loop playsinline poster="images/bakery-preview.jpg">
+        <source src="video/bakery-loop.mp4" type="video/mp4">
+        <source src="video/bakery-loop.webm" type="video/webm">
+        Ваш браузер не поддерживает видео.
+    </video>
+
+    <!-- Затемнение -->
+    <div class="catalog-overlay"></div>
+
+    <!-- Всё содержимое каталога -->
+    <div class="container catalog-content">
+
+        <div class="catalog-title">
+            <h1>Вся наша выпечка</h1>
+            <p>Только натуральные ингредиенты</p>
+        </div>
+
+        <!-- ФИЛЬТРЫ -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">Всё</button>
+            <button class="filter-btn" data-filter="bread">Хлеб</button>
+            <button class="filter-btn" data-filter="sweet">Сладкое</button>
+            <button class="filter-btn" data-filter="crackers">Сухарики</button>
+            <button class="filter-btn" data-filter="bagels">Баранки и бублики</button>
+        </div>
+<!-- ФИЛЬТР ПО ЦЕНЕ -->
+<div class="price-filter">
+    <div class="price-input">
+        <label>Цена от:</label>
+        <input type="number" id="price-from" placeholder="0" min="0">
+    </div>
+    <div class="price-input">
+        <label>до:</label>
+        <input type="number" id="price-to" placeholder="200" min="0">
+    </div>
+    <button class="price-apply-btn">Применить</button>
+    <button class="price-reset-btn">Сбросить</button>
+</div>
+
+        <!-- КАТАЛОГ -->
+        <div class="catalog-grid">
+            
+            <!-- ХЛЕБ -->
+            <div class="product-card" data-category="bread" data-tilt><img src="images/borodinsky.jpg" alt=""><div class="info"><h3>Бородинский</h3><p>С кориандром · 600 г</p><div class="price">60 ₽</div><button onclick="addToCart('Бородинский',60)">В корзину</button></div></div>
+            <div class="product-card" data-category="bread" data-tilt><img src="images/darnitsky.jpg" alt=""><div class="info"><h3>Дарницкий</h3><p>Ржаной · 500 г</p><div class="price">50 ₽</div><button onclick="addToCart('Дарницкий',50)">В корзину</button></div></div>
+            <div class="product-card" data-category="bread" data-tilt><img src="images/baton.jpg" alt=""><div class="info"><h3>Батон нарезной</h3><p>Классика · 400 г</p><div class="price">40 ₽</div><button onclick="addToCart('Батон нарезной',40)">В корзину</button></div></div>
+            <div class="product-card" data-category="bread" data-tilt><img src="images/otrubi.jpg" alt=""><div class="info"><h3>С отрубями</h3><p>Полезный · 500 г</p><div class="price">55 ₽</div><button onclick="addToCart('С отрубями',55)">В корзину</button></div></div>
+            <div class="product-card" data-category="bread" data-tilt><img src="images/cherniy.jpg" alt=""><div class="info"><h3>Чёрный хлеб</h3><p>На закваске · 700 г</p><div class="price">65 ₽</div><button onclick="addToCart('Чёрный хлеб',65)">В корзину</button></div></div>
+            <div class="product-card" data-category="bread" data-tilt><img src="images/beliy.jpg" alt=""><div class="info"><h3>Белый хлеб</h3><p>Пшеничный · 500 г</p><div class="price">45 ₽</div><button onclick="addToCart('Белый хлеб',45)">В корзину</button></div></div>
+
+            <!-- СЛАДКОЕ -->
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/bulki.jpg" alt=""><div class="info"><h3>Сдобные булки</h3><p>С изюмом · шт.</p><div class="price">35 ₽</div><button onclick="addToCart('Сдобные булки',35)">В корзину</button></div></div>
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/ponchiki.jpg" alt=""><div class="info"><h3>Пончики</h3><p>С пудрой · шт.</p><div class="price">38 ₽</div><button onclick="addToCart('Пончики',38)">В корзину</button></div></div>
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/vatrushka.jpg" alt=""><div class="info"><h3>Ватрушка</h3><p>С творогом · шт.</p><div class="price">55 ₽</div><button onclick="addToCart('Ватрушка',55)">В корзину</button></div></div>
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/plushki.jpg" alt=""><div class="info"><h3>Плюшки московские</h3><p>С сахаром · шт.</p><div class="price">45 ₽</div><button onclick="addToCart('Плюшки',45)">В корзину</button></div></div>
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/keks.jpg" alt=""><div class="info"><h3>Кекс столичный</h3><p>С изюмом · 400 г</p><div class="price">120 ₽</div><button onclick="addToCart('Кекс',120)">В корзину</button></div></div>
+            <div class="product-card" data-category="sweet" data-tilt><img src="images/pirozhnoe.jpg" alt=""><div class="info"><h3>Пирожное картошка</h3><p>Шоколадное · шт.</p><div class="price">60 ₽</div><button onclick="addToCart('Картошка',60)">В корзину</button></div></div>
+
+            <!-- СУХАРИКИ -->
+            <div class="product-card" data-category="crackers" data-tilt><img src="images/suhari.jpg" alt=""><div class="info"><h3>Ванильные сухари</h3><p>Классика · 300 г</p><div class="price">45 ₽</div><button onclick="addToCart('Ванильные сухари',45)">В корзину</button></div></div>
+            <div class="product-card" data-category="crackers" data-tilt><img src="images/suhari-shokolad.jpg" alt=""><div class="info"><h3>Шоколадные сухари</h3><p>С глазурью · 250 г</p><div class="price">60 ₽</div><button onclick="addToCart('Шоколадные сухари',60)">В корзину</button></div></div>
+            <div class="product-card" data-category="crackers" data-tilt><img src="images/suhari-izyum.jpg" alt=""><div class="info"><h3>Сухари с изюмом</h3><p>Сладкие · 300 г</p><div class="price">55 ₽</div><button onclick="addToCart('Сухари с изюмом',55)">В корзину</button></div></div>
+            <div class="product-card" data-category="crackers" data-tilt><img src="images/suhari-korica.jpg" alt=""><div class="info"><h3>Сухари с корицей</h3><p>Ароматные · 300 г</p><div class="price">52 ₽</div><button onclick="addToCart('Сухари с корицей',52)">В корзину</button></div></div>
+
+            <!-- БАРАНКИ -->
+            <div class="product-card" data-category="bagels" data-tilt><img src="images/baranki.jpg" alt=""><div class="info"><h3>Баранки простые</h3><p>Хрустящие · 200 г</p><div class="price">38 ₽</div><button onclick="addToCart('Баранки простые',38)">В корзину</button></div></div>
+            <div class="product-card" data-category="bagels" data-tilt><img src="images/baranki-mak.jpg" alt=""><div class="info"><h3>Баранки с маком</h3><p>Ароматные · 200 г</p><div class="price">42 ₽</div><button onclick="addToCart('Баранки с маком',42)">В корзину</button></div></div>
+            <div class="product-card" data-category="bagels" data-tilt><img src="images/bubliki.jpg" alt=""><div class="info"><h3>Бублики с кунжутом</h3><p>К чаю · шт.</p><div class="price">50 ₽</div><button onclick="addToCart('Бублики с кунжутом',50)">В корзину</button></div></div>
+            <div class="product-card" data-category="bagels" data-tilt><img src="images/sushki-shokolad.jpg" alt=""><div class="info"><h3>Сушки в шоколаде</h3><p>Праздничные · 200 г</p><div class="price">65 ₽</div><button onclick="addToCart('Сушки в шоколаде',65)">В корзину</button></div></div>
+
+        </div>
+    </div>
+</section>
+
+    <!-- КОРЗИНА -->
+    <div id="cart-modal" class="cart-modal">
+        <div class="cart-content">
+            <div class="cart-header"><h2>Ваша корзина</h2><span class="close-cart">×</span></div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="cart-footer">
+                <div class="cart-total">Итого: <strong id="total-price">0 ₽</strong></div>
+                <button class="btn-checkout">Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

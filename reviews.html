@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отзывы | Хлебокомбинат Большой Камень</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ШАПКА -->
+    <header class="header">
+        <div class="logo-big">ХЛЕБОКОМБИНАТ</div>
+        <nav class="main-nav">
+            <a href="index.html">Главная</a>
+            <a href="about.html">О нас</a>
+            <a href="catalog.html">Каталог</a>
+            <a href="contacts.html">Контакты</a>
+            <a href="reviews.html" class="active">Отзывы</a>
+        </nav>
+        <div class="header-right">
+            <div class="search-box">
+                <input type="text" id="site-search" placeholder="Поиск по сайту...">
+                <button type="button">Поиск</button>
+            </div>
+            <div class="icons">
+                <div class="icon-cart" onclick="openCart()">Корзина <span id="cart-count">0</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ГЕРОЙ ОТЗЫВОВ -->
+    <section class="reviews-hero">
+        <div class="reviews-hero-overlay"></div>
+        <div class="container">
+            <h1>Отзывы наших покупателей</h1>
+            <p>Более 10 000 довольных клиентов каждый месяц</p>
+        </div>
+    </section>
+
+   <!-- ФОРМА ОТЗЫВА — ПРОСТО И КРАСИВО (БЕЗ ЗВЁЗДОЧЕК) -->
+<section class="reviews-form-section">
+    <div class="container">
+        <h2>Оставьте свой отзыв</h2>
+        
+        <form id="review-form">
+            <input type="text" id="review-name" placeholder="Ваше имя" required>
+
+            <!-- ВЫБОР ОЦЕНКИ — СУПЕР КРАСИВО -->
+            <div class="rating-select">
+                <label>Ваша оценка:</label>
+                <select id="review-rating" required>
+                    <option value="5" selected>5 — Отлично</option>
+                    <option value="4">4 — Хорошо</option>
+                    <option value="3">3 — Нормально</option>
+                    <option value="2">2 — Плохо</option>
+                    <option value="1">1 — Очень плохо</option>
+                </select>
+            </div>
+
+            <textarea id="review-text" placeholder="Поделитесь впечатлениями..." rows="6" required></textarea>
+            
+            <button type="button" class="btn-primary">Отправить отзыв</button>
+        </form>
+
+        <div class="moderation-note">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#d4a574" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4l3 3"/>
+            </svg>
+            <span>Отзыв появится на сайте после проверки модератором</span>
+        </div>
+    </div>
+</section>
+
+    <!-- СПИСОК ОТЗЫВОВ -->
+    <section class="reviews-list">
+        <div class="container">
+            <div id="reviews-container">
+                
+            </div>
+        </div>
+    </section>
+
+    <!-- КОРЗИНА -->
+    <div id="cart-modal" class="cart-modal">
+        <div class="cart-content">
+            <div class="cart-header"><h2>Ваша корзина</h2><span class="close-cart">×</span></div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="cart-footer">
+                <div class="cart-total">Итого: <strong id="total-price">0 ₽</strong></div>
+                <button class="btn-checkout">Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

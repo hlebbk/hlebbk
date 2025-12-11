@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хлебокомбинат Большой Камень</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="header">
+    <div class="logo-big">ХЛЕБОКОМБИНАТ</div>
+    <nav class="main-nav">
+    <a href="index.html">Главная</a>
+    <a href="about.html">О нас</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="contacts.html">Контакты</a>
+    <a href="reviews.html">Отзывы</a>  
+</nav>
+    <div class="header-right">
+        <div class="search-box">
+            <input type="text" id="site-search" placeholder="Поиск по сайту...">
+            <button type="button">Поиск</button>
+        </div>
+        <div class="icons">
+            
+            <div class="icon-cart" onclick="openCart()">Корзина <span id="cart-count">0</span></div>
+        </div>
+    </div>
+</header>
+
+    <!-- Видео-фон -->
+    <section class="hero">
+        <video class="hero-video" autoplay muted loop playsinline>
+            <source src="video/bakery.mp4" type="video/mp4">
+            <img src="images/main.jpg" alt="Фон">
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-text">
+            <h1 class="animate-title">ХЛЕБОКОМБИНАТ</h1>
+            <p class="animate-subtitle">Большой Камень • с 1978 года</p>
+            <a href="catalog.html" class="btn-primary">Выбрать хлеб</a>
+        </div>
+        <div class="crumbs"></div>
+    </section>
+
+    <!-- Хиты продаж -->
+    <section class="quick-hits">
+    <div class="container">
+        <h2>Хиты продаж</h2>
+        <p>Самые любимые товары наших покупателей</p>
+
+        <div class="hits-wrapper">
+            
+            <button class="hits-arrow left" onclick="scrollHits(-1)">←</button>
+            <button class="hits-arrow right" onclick="scrollHits(1)">→</button>
+
+            <div class="hits-grid">
+                
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Корзина -->
+    <div id="cart-modal" class="cart-modal">
+        <div class="cart-content">
+            <div class="cart-header"><h2>Ваша корзина</h2><span class="close-cart">×</span></div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="cart-footer">
+                <div class="cart-total">Итого: <strong id="total-price">0 ₽</strong></div>
+                <button class="btn-checkout">Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
