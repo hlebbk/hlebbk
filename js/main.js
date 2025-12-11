@@ -155,7 +155,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // === 1. Отправка отзыва + сохранение в "ожидание" ===
+    // === ОТПРАВКА ОТЗЫВА ===
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -163,20 +163,21 @@ function initReviewsWithTelegram() {
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value;
 
-        if (!name || !text) {
-            alert('Заполните имя и отзыв!');
-            return;
-        }
+        if (!name || !text) return alert('Заполните имя и отзыв!');
 
         const reviewId = Date.now().toString();
-        const newReview = { id: reviewId, name, rating, text };
+        const review = { id: reviewId, name, rating, text };
 
-        // Сохраняем в очередь на модерацию
+        // Сохраняем в очередь
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift(newReview);
+        pending.unshift(review);
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Отправляем тебе в Telegram с кнопками
+        // Ссылка, которая работает и локально, и на GitHub Pages
+        const baseUrl = window.location.origin + window.location.pathname;
+        const approveUrl = `${baseUrl}?approve=${reviewId}`;
+        const rejectUrl = `${baseUrl}?reject=${reviewId}`;
+
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -184,11 +185,11 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Опубликовать → https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
-Удалить → https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
+[Опубликовать](${approveUrl})
+[Удалить](${rejectUrl})`;
 
         fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(
-            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&disable_web_page_preview=true`
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown&disable_web_page_preview=true`
         )}`);
 
         alert('Спасибо! Отзыв отправлен на модерацию');
@@ -196,10 +197,10 @@ ${text}
         document.getElementById('review-rating').value = '5';
     });
 
-    // === 2. Проверка — пришёл ли approve/reject из Telegram ===
-    const urlParams = new URLSearchParams(window.location.search);
-    const approve = urlParams.get('approve');
-    const reject = urlParams.get('reject');
+    // === ОДОБРЕНИЕ / ОТКЛОНЕНИЕ ===
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
 
     if (approve || reject) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
@@ -208,27 +209,25 @@ ${text}
         if (index !== -1) {
             if (approve) {
                 let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({
-                    ...pending[index],
-                    date: new Date().toLocaleDateString('ru-RU')
-                });
+                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
                 localStorage.setItem('published_reviews', JSON.stringify(published));
             }
             pending.splice(index, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
-        history.replaceState({}, '', 'reviews.html'); // убираем ?approve=... из адресной строки
+        history.replaceState({}, '', window.location.pathname); 
+        location.reload(); 
     }
 
-    // === 3. Показываем только опубликованные отзывы ===
+    // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ===
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:60px 0;font-size:1.3rem;">Пока нет опубликованных отзывов</p>'
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.4rem;">Пока нет опубликованных отзывов</p>'
         : published.map(r => `
             <div class="review-card">
-                <div class="review-top">
+                <div class="review-header">
                     <strong>${r.name}</strong>
-                    <span class="rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
                 </div>
                 <p>${r.text.replace(/\n/g, '<br>')}</p>
                 <small>${r.date}</small>
