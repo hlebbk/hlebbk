@@ -24,14 +24,20 @@ function updateCartCount() {
     countEls.forEach(el => el.textContent = cart.length);
 }
 
-window.addToCart = function(name, price) {  // Глобальная для onclick в HTML
-    cart.push({name, price: parseInt(price)});
+window.addToCart = function(name, price) {
+    price = parseInt(price);
+    const existingItem = cart.find(item => item.name === name);
+    if (existingItem) {
+        existingItem.quantity += 1;  // Увеличиваем количество
+    } else {
+        cart.push({ name, price, quantity: 1 });
+    }
     stats[name] = (stats[name] || 0) + 1;
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
-    alert(`Добавлено: ${name}`);
+    alert(`Добавлено: ${name} (всего: ${existingItem ? existingItem.quantity : 1})`);
 };
 
 window.removeFromCart = function(i) {
@@ -53,8 +59,20 @@ function renderCart() {
     let sum = 0;
     c.innerHTML = '';
     cart.forEach((item, i) => {
-        sum += item.price;
-        c.innerHTML += `<div class="cart-item"><span>${item.name} — ${item.price} ₽</span><button onclick="removeFromCart(${i})">Удалить</button></div>`;
+        const itemTotal = item.price * item.quantity;
+        sum += itemTotal;
+        c.innerHTML += `
+            <div class="cart-item">
+                <span>${item.name} — ${item.price} ₽ / шт.</span>
+                <div class="quantity-controls-cart">
+                    <button class="qty-btn-cart minus" onclick="changeQuantity(${i}, -1)">–</button>
+                    <span class="cart-qty">${item.quantity}</span>
+                    <button class="qty-btn-cart plus" onclick="changeQuantity(${i}, 1)">+</button>
+                </div>
+                <span class="item-total">${itemTotal} ₽</span>
+                <button class="btn-remove" onclick="removeFromCart(${i})">Удалить</button>
+            </div>
+        `;
     });
     if (t) t.textContent = sum + ' ₽';
 }
