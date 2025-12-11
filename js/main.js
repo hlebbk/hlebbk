@@ -151,10 +151,14 @@ function initReviewsWithTelegram() {
     const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
 
-    const button = document.querySelector('#review-form button[type="button"]');
-    if (!button) return;
+    const form = document.getElementById('review-form');
+    const container = document.getElementById('reviews-container');
+    if (!form || !container) return;
 
-    button.addEventListener('click', function() {
+    // === 1. Отправка отзыва + сохранение в "ожидание" ===
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
         const name = document.getElementById('review-name').value.trim();
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value;
@@ -164,21 +168,70 @@ function initReviewsWithTelegram() {
             return;
         }
 
+        const reviewId = Date.now().toString();
+        const newReview = { id: reviewId, name, rating, text };
+
+        // Сохраняем в очередь на модерацию
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        pending.unshift(newReview);
+        localStorage.setItem('pending_reviews', JSON.stringify(pending));
+
+        // Отправляем тебе в Telegram с кнопками
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
 Оценка: ${rating} из 5
 Отзыв:
-${text}`;
+${text}
 
-        // САМЫЙ НАДЁЖНЫЙ СПОСОБ В МИРЕ — через <img> (работает даже без fetch и CORS)
-        const img = new Image();
-        img.src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&t=${Date.now()}`;
+Опубликовать → https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
+Удалить → https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
 
-        img.onload = img.onerror = () => {
-            alert('Спасибо! Ваш отзыв отправлен на модерацию');
-            document.getElementById('review-form').reset();
-            document.getElementById('review-rating').value = '5';
-        };
+        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&disable_web_page_preview=true`
+        )}`);
+
+        alert('Спасибо! Отзыв отправлен на модерацию');
+        form.reset();
+        document.getElementById('review-rating').value = '5';
     });
+
+    // === 2. Проверка — пришёл ли approve/reject из Telegram ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const approve = urlParams.get('approve');
+    const reject = urlParams.get('reject');
+
+    if (approve || reject) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const index = pending.findIndex(r => r.id === (approve || reject));
+
+        if (index !== -1) {
+            if (approve) {
+                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                published.unshift({
+                    ...pending[index],
+                    date: new Date().toLocaleDateString('ru-RU')
+                });
+                localStorage.setItem('published_reviews', JSON.stringify(published));
+            }
+            pending.splice(index, 1);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        }
+        history.replaceState({}, '', 'reviews.html'); // убираем ?approve=... из адресной строки
+    }
+
+    // === 3. Показываем только опубликованные отзывы ===
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;color:#888;padding:60px 0;font-size:1.3rem;">Пока нет опубликованных отзывов</p>'
+        : published.map(r => `
+            <div class="review-card">
+                <div class="review-top">
+                    <strong>${r.name}</strong>
+                    <span class="rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
+                <small>${r.date}</small>
+            </div>
+        `).join('');
 }
