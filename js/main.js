@@ -1,18 +1,8 @@
-// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (2025, исправлено для ПК и мобильных)
-
+// main.js — ТВОЙ СТАРЫЙ РАБОЧИЙ КОД + ФИКС ОТЗЫВОВ (без дублей, с красивым рендером)
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Проверяем, что DOM готов
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeSite);
-    } else {
-        initializeSite();
-    }
-});
-
-function initializeSite() {
     updateCartCount();
     renderHits();
     renderCart();
@@ -23,12 +13,11 @@ function initializeSite() {
     if (window.location.pathname.includes('reviews.html')) {
         initReviewsWithTelegram();
     }
-}
+});
 
 // ==================== КОРЗИНА ====================
 function updateCartCount() {
     const countEls = document.querySelectorAll('#cart-count');
-    if (countEls.length === 0) return;
     countEls.forEach(el => el.textContent = cart.length);
 }
 
@@ -67,15 +56,12 @@ function renderCart() {
     if (t) t.textContent = sum + ' ₽';
 }
 
-// Кнопки корзины
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('icon-cart')) {
         renderCart();
         const modal = document.getElementById('cart-modal');
         if (modal) modal.style.display = 'flex';
     }
-});
-document.addEventListener('click', (e) => {
     if (e.target.classList.contains('close-cart')) {
         const modal = document.getElementById('cart-modal');
         if (modal) modal.style.display = 'none';
@@ -171,7 +157,7 @@ function initGlobalSearch() {
     });
 }
 
-// ==================== ОТЗЫВЫ С МОДЕРАЦИЕЙ ====================
+// ==================== ОТЗЫВЫ — ФИКС: БЕЗ ДУБЛЕЙ, С КРАСИВЫМ РЕНДЕРОМ И ОТПРАВКОЙ В ТЕЛЕГРАМ ====================
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
@@ -180,39 +166,23 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем отзывы с GitHub
-    function loadReviews() {
-        fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json')
-            .then(r => r.json())
-            .then(data => {
-                container.innerHTML = data.length === 0
-                    ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
-                    : data.map(r => `
-                        <div class="review-card">
-                            <div class="review-header">
-                                <strong>${r.name}</strong>
-                                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-                            </div>
-                            <p>${r.text.replace(/\n/g, '<br>')}</p>
-                            <small>${r.date}</small>
-                        </div>
-                    `).join('');
-            })
-            .catch(() => {
-                container.innerHTML = '<p style="color:#c33;text-align:center;">Не удалось загрузить отзывы</p>';
-            });
-    }
-
-    loadReviews();
-
-    // Отправка отзыва в Telegram
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
+
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value || 5;
+
         if (!text) return alert('Напишите отзыв!');
 
+        const reviewId = Date.now().toString();
+
+        // Сохраняем в localStorage для модерации
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        pending.unshift({ id: reviewId, name, rating, text });
+        localStorage.setItem('pending_reviews', JSON.stringify(pending));
+
+        // Текст для Telegram — без звёздочек, просто цифры
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -220,52 +190,51 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Одобрить → /ok_${Date.now()}
-Отклонить → /no_${Date.now()}`;
+Опубликовать: https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
+Отклонить: https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
 
+        // Отправка — простой и надёжный способ
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
-}
 
-    // Модерация по /ok_ и /no_
-    const params = new URLSearchParams(location.search);
-    const okId = params.get('ok');
-    const noId = params.get('no');
+    // Модерация по ссылкам (approve/reject)
+    const params = new URLSearchParams(window.location.search);
+    const approve = params.get('approve');
+    const reject = params.get('reject');
 
-    if (okId || noId) {
-        const id = okId || noId;
+    if (approve || reject) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const idx = pending.findIndex(r => r.id === id);
-        if (idx > -1) {
-            if (okId) {
+        const index = pending.findIndex(r => r.id === (approve || reject));
+
+        if (index !== -1) {
+            if (approve) {
                 let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({
-                    name: pending[idx].name,
-                    text: pending[idx].text,
-                    rating: pending[idx].rating,
-                    date: new Date().toLocaleDateString('ru-RU')
-                });
+                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
                 localStorage.setItem('published_reviews', JSON.stringify(published));
             }
-            pending.splice(idx, 1);
+            pending.splice(index, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
-        history.replaceState(null, '', 'reviews.html');
+        history.replaceState({}, '', 'reviews.html');
         location.reload();
     }
 
-    // Показ отзывов (как было)
+    // Показ отзывов — твой старый красивый рендер с тёмными карточками и жёлтыми звёздочками
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
         : published.map(r => `
-            <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                <strong>${r.name}</strong> — ${r.rating} из 5<br>
-                <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
+            <div class="review-card">
+                <div class="review-header">
+                    <strong>${r.name}</strong>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
                 <small>${r.date}</small>
-            </div>`).join('');
+            </div>
+        `).join('');
 }
