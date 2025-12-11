@@ -180,23 +180,33 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
+    // Загружаем отзывы с GitHub — теперь у всех одинаковые!
+    function loadReviews() {
+        fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json')
+            .then(r => r.json())
+            .then(data => {
+                container.innerHTML = data.length === 0
+                    ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+                    : data.map(r => `
+                        <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                            <strong>${r.name}</strong> — ${r.rating} из 5}<br>
+                            <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
+                            <small style="color:#777;">${r.date}</small>
+                        </div>`).join('');
+            })
+            .catch(() => { container.innerHTML = '<p style="color:#c33;">Ошибка загрузки отзывов</p>'; });
+    }
 
+    loadReviews(); // сразу при открытии
+
+    // Отправка отзыва — как раньше (в группу)
+    form.addEventListener('submit', e => {
+        e.preventDefault();
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value || 5;
-
         if (!text) return alert('Напишите отзыв!');
 
-        const reviewId = Date.now().toString();
-
-        // Сохраняем в localStorage (как было)
-        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift({ id: reviewId, name, rating, text });
-        localStorage.setItem('pending_reviews', JSON.stringify(pending));
-
-        // Формируем текст БЕЗ звёздочек — только цифры
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -204,19 +214,16 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Одобрить → /ok_${reviewId}
-Отклонить → /no_${reviewId}`;
+Одобрить → /ok_${Date.now()}
+Отклонить → /no_${Date.now()}`;
 
-        // САМЫЙ НАДЁЖНЫЙ СПОСОБ — img.src + 3 прокси
-        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
-        new Image().src = url;
-        new Image().src = 'https://corsproxy.io/?' + encodeURIComponent(url);
-        new Image().src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+}
 
     // Модерация по /ok_ и /no_
     const params = new URLSearchParams(location.search);
