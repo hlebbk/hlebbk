@@ -172,7 +172,7 @@ function initGlobalSearch() {
 // ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (один бот, работает на всех устройствах) ====================
 function initReviewsWithTelegram() {
     const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
-    const CHAT_ID = '-5098369660';
+    const CHAT_ID = '-1003492673965';
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
@@ -403,7 +403,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', (e) => {
 
     // Отправка через Telegram Bot API
     const token = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const chatId = '-5098369660';
+    const chatId = '-1003492673965';
     const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
 
     fetch(url)
