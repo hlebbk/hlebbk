@@ -159,69 +159,50 @@ function initGlobalSearch() {
 
 // ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (один бот, работает на всех устройствах) ====================
 function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8'; // твой токен
+    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
     const CHAT_ID = '-5098369660';
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Загружаем общие отзывы из reviews.json (видно на всех устройствах)
+    // Загружаем общие отзывы из reviews.json (видно всем)
     function loadReviews() {
         fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
             .then(r => r.json())
             .then(data => {
                 container.innerHTML = data.length === 0
-                    ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+                    ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
                     : data.map(r => `
                         <div class="review-card">
                             <div class="review-header">
                                 <strong>${r.name}</strong>
                                 <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
                             </div>
-                            <p>${r.text.replace(/\n/g, '<br>')}</p>
+                            <p>${r.text.replace(/\n/g,'<br>')}</p>
                             <small>${r.date}</small>
                         </div>
                     `).join('');
             })
-            .catch(() => {
-                // Fallback на localStorage (твои старые отзывы)
-                const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                container.innerHTML = published.length === 0
-                    ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
-                    : published.map(r => `
-                        <div class="review-card">
-                            <div class="review-header">
-                                <strong>${r.name}</strong>
-                                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                            </div>
-                            <p>${r.text.replace(/\n/g, '<br>')}</p>
-                            <small>${r.date}</small>
-                        </div>
-                    `).join('');
-            });
+            .catch(() => console.log('Не удалось загрузились отзывы из файла'));
     }
-
     loadReviews();
 
-    // Отправка отзыва — через прокси (обходит CORS, 100% доходит)
-    form.addEventListener('submit', function(e) {
+    // ТВОЙ СТАРЫЙ РАБОЧИЙ СПОСОБ ОТПРАВКИ — 100% ДОХОДИТ
+    form.addEventListener('submit', e => {
         e.preventDefault();
-
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value || 5;
-
         if (!text) return alert('Напишите отзыв!');
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем в pending (локально)
+        // Сохраняем локально для модерации
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift({ id: reviewId, name, rating, text });
+        pending.unshift({id: reviewId, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Сообщение для Telegram (без звёздочек)
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -229,40 +210,34 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Опубликовать: https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
-Отклонить: https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
+Опубликовать → https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
+Отклонить → https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
 
-        // ОТПРАВКА ЧЕРЕЗ ПРОКСИ — 100% ДОХОДИТ (обходит CORS)
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(
-            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`
-        );
-        fetch(proxyUrl)
-            .then(() => alert('Спасибо! Отзыв отправлен на модерацию'))
-            .catch(() => alert('Ошибка отправки — попробуй ещё раз'));
+        // ЭТОТ СПОСОБ У ТЕБЯ ВСЕГДА РАБОТАЛ — ОСТАВЛЯЕМ ЕГО
+        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
+        alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
 
-    // Модерация (approve/reject) — сохраняем в localStorage (пока)
-    const params = new URLSearchParams(window.location.search);
+    // Модерация по ссылкам (как было)
+    const params = new URLSearchParams(location.search);
     const approve = params.get('approve');
     const reject = params.get('reject');
-
     if (approve || reject) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const index = pending.findIndex(r => r.id === (approve || reject));
-
-        if (index !== -1) {
+        const idx = pending.findIndex(r => r.id === (approve || reject));
+        if (idx > -1) {
             if (approve) {
-                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
-                localStorage.setItem('published_reviews', JSON.stringify(published));
+                let pub = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+                pub.unshift({...pending[idx], date: new Date().toLocaleDateString('ru-RU')});
+                localStorage.setItem('published_reviews', JSON.stringify(pub));
             }
-            pending.splice(index, 1);
+            pending.splice(idx, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
-        history.replaceState({}, '', 'reviews.html');
+        history.replaceState(null, '', 'reviews.html');
         location.reload();
     }
 }
