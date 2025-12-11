@@ -212,6 +212,7 @@ ${text}
     }
 
     // 3. ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ
+        // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ + КНОПКА УДАЛЕНИЯ ===
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
         ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
@@ -223,6 +224,67 @@ ${text}
                 </div>
                 <p>${r.text.replace(/\n/g, '<br>')}</p>
                 <small>${r.date}</small>
+                <button class="delete-review-btn" data-id="${r.id}" style="
+                    margin-top: 12px;
+                    padding: 8px 16px;
+                    background: #a00;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                ">Удалить отзыв</button>
             </div>
         `).join('');
+
+    // Включаем возможность удаления
+    enableReviewDeletion();
+// ==================== УДАЛЕНИЕ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ====================
+function enableReviewDeletion() {
+    // Находим все кнопки удаления
+    document.querySelectorAll('.delete-review-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!confirm('Удалить этот отзыв навсегда?')) return;
+
+            const reviewId = this.dataset.id;
+
+            let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+            published = published.filter(r => r.id !== reviewId);
+            localStorage.setItem('published_reviews', JSON.stringify(published));
+
+            // Обновляем отображение
+            const container = document.getElementById('reviews-container');
+            if (published.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>';
+            } else {
+                container.innerHTML = published.map(r => createReviewHTML(r)).join('');
+            }
+
+            enableReviewDeletion(); // перепривязываем кнопки
+        });
+    });
+}
+
+// Вспомогательная функция для HTML отзыва
+function createReviewHTML(r) {
+    return `
+        <div class="review-card">
+            <div class="review-header">
+                <strong>${r.name}</strong>
+                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+            </div>
+            <p>${r.text.replace(/\n/g, '<br>')}</p>
+            <small>${r.date}</small>
+            <button class="delete-review-btn" data-id="${r.id}" style="
+                margin-top: 12px;
+                padding: 8px 16px;
+                background: #8b0000;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.9rem;
+            ">Удалить отзыв</button>
+        </div>
+    `;
 }
