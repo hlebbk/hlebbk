@@ -165,47 +165,140 @@ function initGlobalSearch() {
 }
 
 // ==================== ОТЗЫВЫ С КНОПКАМИ В ТЕЛЕГРАМ (новое, но без ошибок нет) ====================
+// === ОТЗЫВЫ — ПРОСТО И НАДЁЖНО (2025) ===
 function initReviewsWithTelegram() {
     const TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const CHAT_ID = '-5098369660';
-    const BASE_URL = 'https://hlebbk.github.io/hlebbk/reviews.html';
+    const CHAT_ID = '-5098369660'; // твоя группа
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
+    // 1. Отправка отзыва с сайта
     form.addEventListener('submit', e => {
         e.preventDefault();
-        const name = document.getElementById('review-name').value.trim();
-        const text = document.getElementById('review-text').value.trim();
-        const rating = document.getElementById('review-rating').value;
 
-        if (!name || !text) return alert('Заполните имя и отзыв!');
+        const name = document.getElementById('review-name').value.trim() || 'Аноним';
+        const text = document.getElementById('review-text').value.trim();
+        const rating = document.getElementById('review-rating').value || 5;
+
+        if (!text) return alert('Напишите отзыв!');
 
         const id = Date.now().toString();
+
+        // сохраняем в очередь
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
         pending.unshift({id, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        const msg = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}`;
+        // красивое сообщение в группу
+        const message = `Новый отзыв на модерацию
 
-        const keyboard = {
-            inline_keyboard: [[
-                {text: "Опубликовать", url: `${BASE_URL}?approve=${id}`},
-                {text: "Отклонить", url: `${BASE_URL}?reject=${id}`}
-            ]]
-        };
+Имя: ${name}
+Оценка: ${rating} из 5
+Отзыв: ${text}
 
-        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.telegram.org/bot' + TOKEN + '/sendMessage')}`, {
+Команды:
+Одобрить → /approve_${id}
+Отклонить → /reject_${id}`;
+
+        // отправляем через Telegram API напрямую (allorigins больше не нужен)
+        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({chat_id: CHAT_ID, text: msg, reply_markup: keyboard})
-        });
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        }).catch(() => {});
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+
+    // 2. Обработка команд /approve_xxx и /reject_xxx (ты пишешь в группу)
+    // Это работает через getUpdates — проверяет последние сообщения
+    function checkCommands() {
+        fetch(`https://api.telegram.org/bot${TOKEN}/getUpdates?limit=20&offset=-1`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok || !data.result) return;
+
+                data.result.reverse().forEach(update => {
+                    if (!update.message || !update.message.text) return;
+                    const text = update.message.text.trim();
+                    const chatId = update.message.chat.id.toString();
+
+                    // принимаем команды только из твоей группы
+                    if (chatId !== CHAT) return;
+
+                    if (text.startsWith('/approve_')) {
+                        const id = text.split('_')[1];
+                        approveReview(id);
+                    } else if (text.startsWith('/reject_')) {
+                        const id = text.split('_')[1];
+                        rejectReview(id);
+                    }
+                });
+            })
+            .catch(() => {});
+    }
+
+    function approveReview(id) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        const review = pending.find(r => r.id === id);
+        if (review) {
+            let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+            published.unshift({
+                name: review.name,
+                text: review.text,
+                rating: review.rating,
+                date: new Date().toLocaleDateString('ru-RU')
+            });
+            localStorage.setItem('published_reviews', JSON.stringify(published));
+            pending = pending.filter(r => r.id !== id);
+            localStorage.setItem('pending_reviews', JSON.stringify(pending));
+            renderReviews();
+        }
+    }
+
+    function rejectReview(id) {
+        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
+        pending = pending.filter(r => r.id !== id);
+        localStorage.setItem('pending_reviews', JSON.stringify(pending));
+    }
+
+    // запускаем проверку команд каждые 5 секунд
+    setInterval(checkCommands, 5000);
+    checkCommands(); // и сразу при загрузке
+
+    // 3. Кнопки по ссылке (резервный способ)
+    const params = new URLSearchParams(location.search);
+    if (params.has('approve') || params.has('reject')) {
+        const id = params.get('approve') || params.get('reject');
+        if (params.has('approve')) approveReview(id);
+        else rejectReview(id);
+        history.replaceState(null, '', 'reviews.html');
+        location.reload();
+    }
+
+    // 4. Показ отзывов
+    function renderReviews() {
+        const list = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+        container.innerHTML = list.length === 0
+            ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+            : list.map(r => `
+                <div style="background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:left;">
+                    <strong>${r.name}</strong> — ${r.rating} из 5<br>
+                    <p style="margin:10px 0;">${r.text.replace(/\n/g,'<br>')}</p>
+                    <small style="color:#777;">${r.date}</small>
+                </div>`).join('');
+    }
+
+    renderReviews();
+}
 
     // модерация
     const params = new URLSearchParams(location.search);
