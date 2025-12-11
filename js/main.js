@@ -380,6 +380,7 @@ function initCheckoutModal() {
     });
 }
 // ==================== ИЗМЕНЕНИЕ КОЛИЧЕСТВА В КОРЗИНЕ ====================
+// Изменение количества в корзине
 window.changeQuantity = function(index, delta) {
     const newQty = cart[index].quantity + delta;
     if (newQty < 1) {
@@ -392,6 +393,7 @@ window.changeQuantity = function(index, delta) {
     renderCart();
 };
 
+// Удаление товара
 window.removeFromCart = function(index) {
     cart.splice(index, 1);
     localStorage.setItem('bk_cart', JSON.stringify(cart));
