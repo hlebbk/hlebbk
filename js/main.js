@@ -1,4 +1,3 @@
-// main.js — 100% рабочий, проверено 11 декабря 2025
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
@@ -12,10 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (location.pathname.includes('reviews.html')) initReviewsWithTelegram();
 });
 
-// КОРЗИНА
 function updateCartCount() {
     document.querySelectorAll('#cart-count').forEach(el => el.textContent = cart.length);
 }
+
 window.addToCart = function(name, price) {
     cart.push({name, price});
     stats[name] = (stats[name] || 0) + 1;
@@ -23,14 +22,16 @@ window.addToCart = function(name, price) {
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
-    alert(`Добавлено: ${name}`);
+    alert('Добавлено: ' + name);
 };
+
 window.removeFromCart = function(i) {
     cart.splice(i, 1);
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     updateCartCount();
     renderCart();
 };
+
 function renderCart() {
     const c = document.getElementById('cart-items');
     const t = document.getElementById('total-price');
@@ -43,12 +44,12 @@ function renderCart() {
     });
     if (t) t.textContent = sum + ' ₽';
 }
+
 document.addEventListener('click', e => {
     if (e.target.closest('.icon-cart')) { renderCart(); document.getElementById('cart-modal')?.style.display = 'flex'; }
     if (e.target.matches('.close-cart')) document.getElementById('cart-modal').style.display = 'none';
 });
 
-// ХИТЫ
 function renderHits() {
     const container = document.querySelector('.hits-grid');
     if (!container) return;
@@ -63,7 +64,6 @@ function renderHits() {
     });
 }
 
-// ФИЛЬТРЫ + ПОИСК + ЦЕНА
 function initFilters() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
@@ -74,6 +74,7 @@ function initFilters() {
         };
     });
 }
+
 function initPriceFilter() {
     const apply = document.querySelector('.price-apply-btn');
     const reset = document.querySelector('.price-reset-btn');
@@ -89,6 +90,7 @@ function initPriceFilter() {
     };
     if (reset) reset.onclick = () => { from.value = to.value = ''; document.querySelectorAll('.product-card').forEach(c => c.style.display = 'block'); };
 }
+
 function initGlobalSearch() {
     const input = document.getElementById('site-search');
     if (input) input.oninput = () => {
@@ -99,7 +101,6 @@ function initGlobalSearch() {
     };
 }
 
-// ОТЗЫВЫ — 100% РАБОТАЕТ (проверено 11 декабря)
 function initReviewsWithTelegram() {
     const TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-5098369660';
@@ -123,7 +124,6 @@ function initReviewsWithTelegram() {
 
         const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв: ${text}\n\nОдобрить → /ok_${id}\nОтклонить → /no_${id}`;
 
-        // ЭТО РАБОТАЕТ ВСЕГДА — просто img.src
         new Image().src = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
