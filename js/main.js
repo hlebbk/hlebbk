@@ -16,64 +16,108 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== КОРЗИНА ====================
+// Инициализация
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
+// Обновление счётчика корзины
 function updateCartCount() {
     const countEls = document.querySelectorAll('#cart-count');
-    countEls.forEach(el => el.textContent = cart.reduce((sum, item) => sum + 1, 0)); // Подсчёт общего количества (учитывая дубли)
+    countEls.forEach(el => {
+        el.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+    });
 }
 
-window.addToCart = function(name, price) {  // ← Экспорт для onclick в HTML
-    cart.push({name, price: parseInt(price)});
+// Добавление товара (глобальная функция для onclick в HTML)
+window.addToCart = function(name, price) {
+    price = parseInt(price);
+    const existingItem = cart.find(item => item.name === name);
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({ name, price, quantity: 1 });
+    }
     stats[name] = (stats[name] || 0) + 1;
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
-    renderHits();
-    alert(`Добавлено: ${name}`);
+    renderHits(); // Если есть функция для хитов
+    alert(`Добавлено: ${name} (кол-во: ${existingItem ? existingItem.quantity : 1})`);
 };
 
-window.removeFromCart = function(i) {
-    cart.splice(i, 1);
+// Удаление товара
+window.removeFromCart = function(index) {
+    cart.splice(index, 1);
     localStorage.setItem('bk_cart', JSON.stringify(cart));
     updateCartCount();
     renderCart();
 };
 
-function renderCart() {
-    const c = document.getElementById('cart-items');
-    const t = document.getElementById('total-price');
-    if (!c) return;
-    if (cart.length === 0) {
-        c.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
-        if (t) t.textContent = '0 ₽';
+// Изменение количества в корзине (для будущего +/–)
+window.changeCartQuantity = function(index, delta) {
+    if (cart[index].quantity + delta < 1) {
+        removeFromCart(index);
         return;
     }
-    let sum = 0;
-    c.innerHTML = '';
-    cart.forEach((item, i) => {
-        sum += item.price;
-        c.innerHTML += `<div class="cart-item"><span>${item.name} — ${item.price} ₽</span><button onclick="removeFromCart(${i})">Удалить</button></div>`;
+    cart[index].quantity += delta;
+    localStorage.setItem('bk_cart', JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+};
+
+// Отрисовка корзины (простая версия с quantity)
+function renderCart() {
+    const container = document.getElementById('cart-items');
+    const totalEl = document.getElementById('total-price');
+    if (!container) return;
+
+    if (cart.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#aaa; padding:30px;">Корзина пуста</p>';
+        if (totalEl) totalEl.textContent = '0 ₽';
+        return;
+    }
+
+    let total = 0;
+    container.innerHTML = '';
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        container.innerHTML += `
+            <div class="cart-item">
+                <span>${item.name} — ${item.price} ₽ / шт. (кол-во: ${item.quantity})</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="changeCartQuantity(${index}, -1)" style="padding:5px 10px; background:#d4a574; color:#000; border:none; border-radius:5px;">–</button>
+                    <button onclick="changeCartQuantity(${index}, 1)" style="padding:5px 10px; background:#d4a574; color:#000; border:none; border-radius:5px;">+</button>
+                    <button onclick="removeFromCart(${index})" style="padding:5px 10px; background:#c0392b; color:white; border:none; border-radius:5px;">Удалить</button>
+                </div>
+            </div>
+        `;
     });
-    if (t) t.textContent = sum + ' ₽';
+    if (totalEl) totalEl.textContent = total + ' ₽';
 }
 
-window.openCart = function() {  // ← Добавь эту функцию для совместимости
+// Открытие корзины (глобальная для onclick, если нужно)
+window.openCart = function() {
     renderCart();
     const modal = document.getElementById('cart-modal');
     if (modal) modal.style.display = 'flex';
 };
 
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('icon-cart')) {
-        openCart();  // Теперь использует функцию
-    }
-    if (e.target.classList.contains('close-cart')) {
-        const modal = document.getElementById('cart-modal');
-        if (modal) modal.style.display = 'none';
-    }
-});
+// Event listeners (для клика на иконку корзины и закрытия)
+document.addEventListener('DOMContentLoaded', () => {
+    updateCartCount();
+    renderCart(); // Инициализация при загрузке
+
+    // Клик на иконку корзины
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.icon-cart')) {
+            openCart();
+        }
+        if (e.target.classList.contains('close-cart')) {
+            const modal = document.getElementById('cart-modal');
+            if (modal) modal.style.display = 'none';
+        }
+    });
 // ==================== ХИТЫ ПРОДАЖ ====================
 function renderHits() {
     const container = document.querySelector('.hits-grid');
