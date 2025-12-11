@@ -158,15 +158,43 @@ function initGlobalSearch() {
 }
 
 // ==================== ОТЗЫВЫ — ФИКС: БЕЗ ДУБЛЕЙ, С КРАСИВЫМ РЕНДЕРОМ И ОТПРАВКОЙ В ТЕЛЕГРАМ ====================
-function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
+// ===================================================================
+// ОТЗЫВЫ — РАБОТАЮТ НА ВСЕХ УСТРОЙСТВАХ + ГОТОВЫ К АВТОМАТИЗАЦИИ
+// ===================================================================
+
+function loadGlobalReviews() {
+    const container = document.getElementById('reviews-container');
+    if (!container) return;
+
+    fetch('https://cdn.jsdelivr.net/gh/hlebbk/hlebbk/reviews.json?t=' + Date.now())
+        .then(r => r.json())
+        .then(reviews => {
+            container.innerHTML = reviews.length === 0
+                ? '<p style="text-align:center;padding:80px;color:#888;">Отзывов пока нет</p>'
+                : reviews.map(r => `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <strong>${r.name}</strong>
+                            <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                        </div>
+                        <p>${r.text.replace(/\n/g,'<br>')}</p>
+                        <small>${r.date}</small>
+                    </div>
+                `).join('');
+        })
+        .catch(() => {
+            container.innerHTML = '<p style="color:#c33;">Ошибка загрузки отзывов</p>';
+        });
+}
+
+function setupReviewForm() {
+    const form = document.getElementById('review-form');
+    if (!form) return;
+
+    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8'; // твой бот
     const CHAT_ID = '-5098369660';
 
-    const form = document.getElementById('review-form');
-    const container = document.getElementById('reviews-container');
-    if (!form || !container) return;
-
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', e => {
         e.preventDefault();
 
         const name = document.getElementById('review-name').value.trim() || 'Аноним';
@@ -175,14 +203,9 @@ function initReviewsWithTelegram() {
 
         if (!text) return alert('Напишите отзыв!');
 
-        const reviewId = Date.now().toString();
+        const reviewData = {name, rating, text, date: new Date().toLocaleDateString('ru-RU')};
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(reviewData))));
 
-        // Сохраняем в localStorage для модерации
-        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift({ id: reviewId, name, rating, text });
-        localStorage.setItem('pending_reviews', JSON.stringify(pending));
-
-        // Текст для Telegram — без звёздочек, просто цифры
         const message = `Новый отзыв на модерацию
 
 Имя: ${name}
@@ -190,51 +213,19 @@ function initReviewsWithTelegram() {
 Отзыв:
 ${text}
 
-Опубликовать: https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}
-Отклонить: https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}`;
+Чтобы опубликовать — пришли боту команду:
+/add ${encoded}`;
 
-        // Отправка — простой и надёжный способ
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
         alert('Спасибо! Отзыв отправлен на модерацию');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+}
 
-    // Модерация по ссылкам (approve/reject)
-    const params = new URLSearchParams(window.location.search);
-    const approve = params.get('approve');
-    const reject = params.get('reject');
-
-    if (approve || reject) {
-        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const index = pending.findIndex(r => r.id === (approve || reject));
-
-        if (index !== -1) {
-            if (approve) {
-                let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-                published.unshift({ ...pending[index], date: new Date().toLocaleDateString('ru-RU') });
-                localStorage.setItem('published_reviews', JSON.stringify(published));
-            }
-            pending.splice(index, 1);
-            localStorage.setItem('pending_reviews', JSON.stringify(pending));
-        }
-        history.replaceState({}, '', 'reviews.html');
-        location.reload();
-    }
-
-    // Показ отзывов — твой старый красивый рендер с тёмными карточками и жёлтыми звёздочками
-    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
-    container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
-        : published.map(r => `
-            <div class="review-card">
-                <div class="review-header">
-                    <strong>${r.name}</strong>
-                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                </div>
-                <p>${r.text.replace(/\n/g, '<br>')}</p>
-                <small>${r.date}</small>
-            </div>
-        `).join('');
+// Запуск при загрузке страницы отзывов
+if (window.location.pathname.includes('reviews.html')) {
+    loadGlobalReviews();
+    setupReviewForm();
 }
