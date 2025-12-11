@@ -28,7 +28,7 @@ window.addToCart = function(name, price) {
     price = parseInt(price);
     const existingItem = cart.find(item => item.name === name);
     if (existingItem) {
-        existingItem.quantity += 1;  // Увеличиваем количество
+        existingItem.quantity += 1;
     } else {
         cart.push({ name, price, quantity: 1 });
     }
@@ -37,7 +37,7 @@ window.addToCart = function(name, price) {
     localStorage.setItem('bk_stats', JSON.stringify(stats));
     updateCartCount();
     renderHits();
-    alert(`Добавлено: ${name} (всего: ${existingItem ? existingItem.quantity : 1})`);
+    alert(`Добавлено: ${name} (всего в корзине: ${existingItem ? existingItem.quantity + 1 : 1})`);
 };
 
 window.removeFromCart = function(i) {
@@ -63,14 +63,19 @@ function renderCart() {
         sum += itemTotal;
         c.innerHTML += `
             <div class="cart-item">
-                <span>${item.name} — ${item.price} ₽ / шт.</span>
-                <div class="quantity-controls-cart">
-                    <button class="qty-btn-cart minus" onclick="changeQuantity(${i}, -1)">–</button>
-                    <span class="cart-qty">${item.quantity}</span>
-                    <button class="qty-btn-cart plus" onclick="changeQuantity(${i}, 1)">+</button>
+                <div class="cart-item-left">
+                    <span class="cart-item-name">${item.name}</span>
+                    <span class="cart-item-price">${item.price} ₽ / шт.</span>
                 </div>
-                <span class="item-total">${itemTotal} ₽</span>
-                <button class="btn-remove" onclick="removeFromCart(${i})">Удалить</button>
+                <div class="cart-item-right">
+                    <div class="quantity-controls-cart">
+                        <button class="qty-btn-cart minus" onclick="changeQuantity(${i}, -1)">–</button>
+                        <span class="cart-qty">${item.quantity}</span>
+                        <button class="qty-btn-cart plus" onclick="changeQuantity(${i}, 1)">+</button>
+                    </div>
+                    <span class="item-total">${itemTotal} ₽</span>
+                    <button class="btn-remove" onclick="removeFromCart(${i})">Удалить</button>
+                </div>
             </div>
         `;
     });
@@ -186,7 +191,7 @@ function initGlobalSearch() {
 
 // ==================== ОТЗЫВЫ — ПОЛНЫЙ АВТОМАТ (как было) ====================
 function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8514692639:AAGd8FPkt1Fqy5Z0JOmKnTuBxOFnTVHh3L8';
+    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
     const CHAT_ID = '-1003492673965';
 
     const form = document.getElementById('review-form');
