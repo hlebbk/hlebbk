@@ -39,34 +39,46 @@ window.removeFromCart = function(i) {
 };
 
 function renderCart() {
-    const c = document.getElementById('cart-items');
-    const t = document.getElementById('total-price');
-    if (!c) return;
+    const cartItemsContainer = document.getElementById('cart-items');
+    cartItemsContainer.innerHTML = ''; // очищаем
+
     if (cart.length === 0) {
-        c.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
-        if (t) t.textContent = '0 ₽';
+        cartItemsContainer.innerHTML = '<p class="empty-cart">Корзина пуста</p>';
+        document.getElementById('total-price').textContent = '0 ₽';
+        updateCartCount();
         return;
     }
-    let sum = 0;
-    c.innerHTML = '';
-    cart.forEach((item, i) => {
-        sum += item.price;
-        c.innerHTML += `<div class="cart-item"><span>${item.name} — ${item.price} ₽</span><button onclick="removeFromCart(${i})">Удалить</button></div>`;
-    });
-    if (t) t.textContent = sum + ' ₽';
-}
 
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('icon-cart')) {
-        renderCart();
-        const modal = document.getElementById('cart-modal');
-        if (modal) modal.style.display = 'flex';
-    }
-    if (e.target.classList.contains('close-cart')) {
-        const modal = document.getElementById('cart-modal');
-        if (modal) modal.style.display = 'none';
-    }
-});
+    let total = 0;
+
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+
+        // Создаём блок товара с контролем количества
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('cart-item-new'); // новый класс для стилей
+        itemDiv.innerHTML = `
+            <div class="cart-item-info">
+                <span class="cart-item-name">${item.name}</span>
+                <div class="cart-quantity-controls">
+                    <button class="qty-btn-cart minus" onclick="changeCartQuantity(${index}, -1)">–</button>
+                    <span class="cart-qty">${item.quantity}</span>
+                    <button class="qty-btn-cart plus" onclick="changeCartQuantity(${index}, 1)">+</button>
+                </div>
+                <span class="cart-item-price">${item.price} ₽ / шт.</span>
+            </div>
+            <div class="cart-item-total">
+                <span>${itemTotal} ₽</span>
+                <button class="btn-remove" onclick="removeFromCart(${index})">Удалить</button>
+            </div>
+        `;
+        cartItemsContainer.appendChild(itemDiv);
+    });
+
+    document.getElementById('total-price').textContent = total + ' ₽';
+    updateCartCount();
+}
 
 // ==================== ХИТЫ ПРОДАЖ ====================
 function renderHits() {
