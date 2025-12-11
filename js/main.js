@@ -180,7 +180,7 @@ function initReviewsWithTelegram() {
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // Отправка отзыва
+    // === 1. ОТПРАВКА ОТЗЫВА — СРАЗУ НА САЙТ + В TELEGRAM ===
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -188,34 +188,68 @@ function initReviewsWithTelegram() {
         const text = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value;
 
-        if (!name || !text) return alert('Заполните имя и отзыв!');
+        if (!name || !text) {
+            alert('Заполните имя и отзыв!');
+            return;
+        }
 
-        const reviewId = Date.now().toString();
+        const newReview = {
+            id: Date.now().toString(),
+            name: name,
+            rating: parseInt(rating),
+            text: text,
+            date: new Date().toLocaleDateString('ru-RU')
+        };
 
-        // Сохраняем в очередь
-        let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift({ id: reviewId, name, rating, text });
-        localStorage.setItem('pending_reviews', JSON.stringify(pending));
+        // 1. Сразу добавляем на сайт
+        let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+        published.unshift(newReview);
+        localStorage.setItem('published_reviews', JSON.stringify(published));
 
-        // Ссылка для модерации
-        const base = location.href.split('?')[0];
-        const message = `Новый отзыв на модерацию
+        // 2. Обновляем отображение
+        container.innerHTML = published.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <strong>${r.name}</strong>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
+                <small>${r.date}</small>
+            </div>
+        `).join('');
+
+        // 3. Отправляем тебе в Telegram (чтобы ты знал)
+        const message = `Новый отзыв на сайте!
 
 Имя: ${name}
 Оценка: ${rating} из 5
 Отзыв:
 ${text}
 
-Опубликовать: ${base}?approve=${reviewId}
-Удалить: ${base}?reject=${reviewId}`;
+Ссылка: https://hlebbk.github.io/hlebbk/reviews.html`;
 
-        // Отправка через <img>
         new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
 
-        alert('Спасибо! Отзыв отправлен на модерацию');
+        alert('Спасибо! Ваш отзыв опубликован!');
         form.reset();
         document.getElementById('review-rating').value = '5';
     });
+
+    // === 2. ПОКАЗ ОТЗЫВОВ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ ===
+    const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
+    container.innerHTML = published.length === 0
+        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет отзывов. Будьте первым!</p>'
+        : published.map(r => `
+            <div class="review-card">
+                <div class="review-header">
+                    <strong>${r.name}</strong>
+                    <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                </div>
+                <p>${r.text.replace(/\n/g, '<br>')}</p>
+                <small>${r.date}</small>
+            </div>
+        `).join('');
+}
 
     // Одобрение
     const params = new URLSearchParams(window.location.search);
