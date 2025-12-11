@@ -1,9 +1,18 @@
-// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (декабрь 2025, исправлены все ошибки)
+// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (2025, исправлено для ПК и мобильных)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем, что DOM готов
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSite);
+    } else {
+        initializeSite();
+    }
+});
+
+function initializeSite() {
     updateCartCount();
     renderHits();
     renderCart();
@@ -14,11 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('reviews.html')) {
         initReviewsWithTelegram();
     }
-});
+}
 
 // ==================== КОРЗИНА ====================
 function updateCartCount() {
-    document.querySelectorAll('#cart-count').forEach(el => el && (el.textContent = cart.length));
+    const countEls = document.querySelectorAll('#cart-count');
+    if (countEls.length === 0) return;
+    countEls.forEach(el => el.textContent = cart.length);
 }
 
 window.addToCart = function(name, price) {
@@ -56,12 +67,19 @@ function renderCart() {
     if (t) t.textContent = sum + ' ₽';
 }
 
-document.querySelectorAll('.icon-cart').forEach(el => el.onclick = () => {
-    renderCart();
-    document.getElementById('cart-modal').style.display = 'flex';
+// Кнопки корзины
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('icon-cart')) {
+        renderCart();
+        const modal = document.getElementById('cart-modal');
+        if (modal) modal.style.display = 'flex';
+    }
 });
-document.querySelectorAll('.close-cart').forEach(el => el.onclick = () => {
-    document.getElementById('cart-modal').style.display = 'none';
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('close-cart')) {
+        const modal = document.getElementById('cart-modal');
+        if (modal) modal.style.display = 'none';
+    }
 });
 
 // ==================== ХИТЫ ПРОДАЖ ====================
@@ -69,7 +87,7 @@ function renderHits() {
     const container = document.querySelector('.hits-grid');
     if (!container) return;
 
-    const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const sorted = Object.entries(stats).sort((a,b) => b[1] - a[1]).slice(0,8);
     container.innerHTML = '';
 
     const hitImages = {
@@ -102,13 +120,15 @@ function renderHits() {
 
 // ==================== ФИЛЬТРЫ ====================
 function initFilters() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    const buttons = document.querySelectorAll('.filter-btn');
+    if (buttons.length === 0) return;
+    buttons.forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const f = btn.dataset.filter;
             document.querySelectorAll('.product-card').forEach(c => {
-                c.style.display = (f==='all' || c.dataset.category===f) ? 'block' : 'none';
+                c.style.display = (f === 'all' || c.dataset.category === f) ? 'block' : 'none';
             });
         });
     });
@@ -120,17 +140,24 @@ function initPriceFilter() {
     const apply = document.querySelector('.price-apply-btn');
     const reset = document.querySelector('.price-reset-btn');
 
-    const filter = () => {
-        const min = from.value ? +from.value : 0;
-        const max = to.value ? +to.value : Infinity;
-        document.querySelectorAll('.product-card').forEach(card => {
-            const price = parseInt(card.querySelector('.price').textContent);
-            card.style.display = (price >= min && price <= max) ? 'block' : 'none';
+    if (apply) {
+        apply.addEventListener('click', () => {
+            const min = from ? parseInt(from.value) || 0 : 0;
+            const max = to ? parseInt(to.value) || Infinity : Infinity;
+            document.querySelectorAll('.product-card').forEach(card => {
+                const price = parseInt(card.querySelector('.price').textContent);
+                card.style.display = (price >= min && price <= max) ? 'block' : 'none';
+            });
         });
-    };
+    }
 
-    apply?.addEventListener('click', filter);
-    reset?.addEventListener('click', () => { from.value = to.value = ''; filter(); });
+    if (reset) {
+        reset.addEventListener('click', () => {
+            if (from) from.value = '';
+            if (to) to.value = '';
+            document.querySelectorAll('.product-card').forEach(c => c.style.display = 'block');
+        });
+    }
 }
 
 function initGlobalSearch() {
@@ -226,99 +253,4 @@ ${text}
                 <small>${r.date}</small>
             </div>
         `).join('');
-}
-// МОБИЛЬНАЯ АДАПТАЦИЯ — РАБОТАЕТ НА ВСЕХ УСТРОЙСТВАХ
-document.addEventListener('DOMContentLoaded', () => {
-    // Touch-поддержка для кликов (работает на телефоне)
-    document.addEventListener('touchstart', function(e) {
-        const target = e.target;
-        if (target.classList.contains('filter-btn') || target.classList.contains('icon-cart') || target.id === 'site-search') {
-            e.preventDefault(); // убираем задержку 300ms
-            target.click();
-        }
-    }, { passive: false });
-
-    // Оптимизация localStorage (на мобильных медленнее)
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-        try {
-            originalSetItem.call(this, key, value);
-        } catch (e) {
-            console.warn('localStorage full, clearing old data');
-            // Очищаем старые данные, если памяти мало
-            const keys = Object.keys(localStorage);
-            keys.slice(0, 5).forEach(k => localStorage.removeItem(k));
-            originalSetItem.call(this, key, value);
-        }
-    };
-
-    // Поиск на мобильных (touch-friendly)
-    const searchInput = document.getElementById('site-search');
-    if (searchInput) {
-        searchInput.addEventListener('touchstart', e => e.preventDefault());
-    }
-});
-
-// ФИЛЬТРЫ — МОБИЛЬНАЯ ВЕРСИЯ
-function initFilters() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        // Клик + touch
-        btn.addEventListener('click', handleFilterClick);
-        btn.addEventListener('touchend', handleFilterClick, { passive: false });
-    });
-}
-
-function handleFilterClick(e) {
-    e.preventDefault();
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    const f = this.dataset.filter;
-    document.querySelectorAll('.product-card').forEach(c => {
-        c.style.display = (f === 'all' || c.dataset.category === f) ? 'block' : 'none';
-    });
-}
-
-// КОРЗИНА — МОБИЛЬНАЯ ВЕРСИЯ
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.icon-cart').forEach(el => {
-        el.addEventListener('click', openCart);
-        el.addEventListener('touchend', openCart, { passive: false });
-    });
-});
-
-function openCart(e) {
-    e.preventDefault();
-    renderCart();
-    document.getElementById('cart-modal').style.display = 'flex';
-}
-
-// ОТЗЫВЫ — МОБИЛЬНАЯ ВЕРСИЯ (быстрая отправка)
-function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const CHAT_ID = '-5098369660';
-
-    const button = document.querySelector('#review-form button');
-    if (!button) return;
-
-    button.addEventListener('click', sendReview);
-    button.addEventListener('touchend', sendReview, { passive: false });
-
-    function sendReview(e) {
-        e.preventDefault();
-
-        const name = document.getElementById('review-name').value.trim();
-        const text = document.getElementById('review-text').value.trim();
-        const rating = document.getElementById('review-rating').value;
-
-        if (!name || !text) return alert('Заполните имя и отзыв!');
-
-        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}`;
-
-        // Быстрая отправка (работает на мобильных)
-        new Image().src = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
-
-        alert('Спасибо! Отзыв отправлен на модерацию');
-        document.getElementById('review-form').reset();
-        document.getElementById('review-rating').value = '5';
-    }
 }
