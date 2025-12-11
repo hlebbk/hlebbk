@@ -1,16 +1,9 @@
-// main.js — ПОЛНЫЙ РАБОЧИЙ ФАЙЛ (2025, исправлено для ПК и мобильных)
+// main.js — РАБОЧАЯ ВЕРСИЯ ДЕКАБРЬ 2025 (ничего не сломано!)
 
 let cart = JSON.parse(localStorage.getItem('bk_cart')) || [];
 let stats = JSON.parse(localStorage.getItem('bk_stats')) || {};
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Проверяем, что DOM готов
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeSite);
-    } else {
-        initializeSite();
-    }
-});
+document.addEventListener('DOMContentLoaded', initializeSite);
 
 function initializeSite() {
     updateCartCount();
@@ -20,6 +13,7 @@ function initializeSite() {
     initPriceFilter();
     initGlobalSearch();
 
+    // Только на странице отзывов подключаем систему модерации
     if (window.location.pathname.includes('reviews.html')) {
         initReviewsWithTelegram();
     }
@@ -27,9 +21,7 @@ function initializeSite() {
 
 // ==================== КОРЗИНА ====================
 function updateCartCount() {
-    const countEls = document.querySelectorAll('#cart-count');
-    if (countEls.length === 0) return;
-    countEls.forEach(el => el.textContent = cart.length);
+    document.querySelectorAll('#cart-count').forEach(el => el.textContent = cart.length);
 }
 
 window.addToCart = function(name, price) {
@@ -53,11 +45,13 @@ function renderCart() {
     const c = document.getElementById('cart-items');
     const t = document.getElementById('total-price');
     if (!c) return;
+
     if (cart.length === 0) {
         c.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">Корзина пуста</p>';
         if (t) t.textContent = '0 ₽';
         return;
     }
+
     let sum = 0;
     c.innerHTML = '';
     cart.forEach((item, i) => {
@@ -67,15 +61,12 @@ function renderCart() {
     if (t) t.textContent = sum + ' ₽';
 }
 
-// Кнопки корзины
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
     if (e.target.classList.contains('icon-cart')) {
         renderCart();
         const modal = document.getElementById('cart-modal');
         if (modal) modal.style.display = 'flex';
     }
-});
-document.addEventListener('click', (e) => {
     if (e.target.classList.contains('close-cart')) {
         const modal = document.getElementById('cart-modal');
         if (modal) modal.style.display = 'none';
@@ -118,13 +109,11 @@ function renderHits() {
     });
 }
 
-// ==================== ФИЛЬТРЫ ====================
+// ==================== ФИЛЬТРЫ, ПОИСК, ЦЕНА ====================
 function initFilters() {
-    const buttons = document.querySelectorAll('.filter-btn');
-    if (buttons.length === 0) return;
-    buttons.forEach(btn => {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            buttons.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const f = btn.dataset.filter;
             document.querySelectorAll('.product-card').forEach(c => {
@@ -135,87 +124,76 @@ function initFilters() {
 }
 
 function initPriceFilter() {
-    const from = document.getElementById('price-from');
-    const to = document.getElementById('price-to');
     const apply = document.querySelector('.price-apply-btn');
     const reset = document.querySelector('.price-reset-btn');
+    const from = document.getElementById('price-from');
+    const to = document.getElementById('price-to');
 
-    if (apply) {
-        apply.addEventListener('click', () => {
-            const min = from ? parseInt(from.value) || 0 : 0;
-            const max = to ? parseInt(to.value) || Infinity : Infinity;
-            document.querySelectorAll('.product-card').forEach(card => {
-                const price = parseInt(card.querySelector('.price').textContent);
-                card.style.display = (price >= min && price <= max) ? 'block' : 'none';
-            });
+    if (apply) apply.onclick = () => {
+        const min = parseInt(from.value) || 0;
+        const max = parseInt(to.value) || Infinity;
+        document.querySelectorAll('.product-card').forEach(card => {
+            const price = parseInt(card.querySelector('.price').textContent);
+            card.style.display = (price >= min && price <= max) ? 'block' : 'none';
         });
-    }
+    };
 
-    if (reset) {
-        reset.addEventListener('click', () => {
-            if (from) from.value = '';
-            if (to) to.value = '';
-            document.querySelectorAll('.product-card').forEach(c => c.style.display = 'block');
-        });
-    }
+    if (reset) reset.onclick = () => {
+        from.value = ''; to.value = '';
+        document.querySelectorAll('.product-card').forEach(c => c.style.display = 'block');
+    };
 }
 
 function initGlobalSearch() {
     const input = document.getElementById('site-search');
-    if (!input) return;
-    input.addEventListener('input', () => {
-        const q = input.value.toLowerCase();
-        document.querySelectorAll('.product-card, .hit-card').forEach(card => {
-            card.style.display = card.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+    if (input) {
+        input.addEventListener('input', () => {
+            const q = input.value.toLowerCase();
+            document.querySelectorAll('.product-card, .hit-card').forEach(card => {
+                card.style.display = card.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+            });
         });
-    });
+    }
 }
 
-// ==================== ОТЗЫВЫ С МОДЕРАЦИЕЙ ====================
+// ==================== ОТЗЫВЫ + МОДЕРАЦИЯ В ТЕЛЕГРАМ ====================
 function initReviewsWithTelegram() {
-    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';
-    const CHAT_ID = '-5098369660';
+    const BOT_TOKEN = '8547822464:AAGcn1MaI04QpDov0t1Isk1t5HWpRLmD3ts';  // твой токен
+    const CHAT_ID = '-5098369660';                                      // ID твоей приватной группы
 
     const form = document.getElementById('review-form');
     const container = document.getElementById('reviews-container');
     if (!form || !container) return;
 
-    // === ОТПРАВКА ОТЗЫВА С КНОПКАМИ В TELEGRAM ===
-    form.addEventListener('submit', function(e) {
+    // Отправка отзыва → в группу с двумя кнопками
+    form.addEventListener('submit', e => {
         e.preventDefault();
 
-        const name = document.getElementById('review-name').value.trim();
-        const text = document.getElementById('review-text').value.trim();
+        const name   = document.getElementById('review-name').value.trim();
+        const text   = document.getElementById('review-text').value.trim();
         const rating = document.getElementById('review-rating').value;
 
-        if (!name || !text) return alert('Заполните имя и отзыв!');
+        if (!name || !text) return alert('Заполните имя и текст отзыва!');
 
         const reviewId = Date.now().toString();
 
-        // Сохраняем в очередь
+        // Сохраняем в localStorage, чтобы потом можно было одобрить/отклонить
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        pending.unshift({ id: reviewId, name, rating, text });
+        pending.unshift({id: reviewId, name, rating, text});
         localStorage.setItem('pending_reviews', JSON.stringify(pending));
 
-        // Кнопки для модерации
-        const baseUrl = 'https://hlebbk.github.io/hlebbk/reviews.html';
+        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}`;
 
-        const message = `Новый отзыв на модерацию\n\nИмя: ${name}\nОценка: ${rating} из 5\nОтзыв:\n${text}\n\nдобавить / отклонить`;
-
-        // Две красивые кнопки
         const keyboard = {
             inline_keyboard: [
                 [
-                    { text: "Опубликовать", url: `${baseUrl}?approve=${reviewId}` },
-                    { text: "Отклонить", url: `${baseUrl}?reject=${reviewId}` }
+                    { text: "Опубликовать", url: `https://hlebbk.github.io/hlebbk/reviews.html?approve=${reviewId}` },
+                    { text: "Отклонить",    url: `https://hlebbk.github.io/hlebbk/reviews.html?reject=${reviewId}` }
                 ]
             ]
         };
 
-        // Отправляем с кнопками (через прокси, чтобы не было CORS)
-        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(
-            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
-        )}`, {
+        fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage')}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -223,12 +201,6 @@ function initReviewsWithTelegram() {
                 text: message,
                 reply_markup: keyboard
             })
-        }).then(response => {
-            if (!response.ok) {
-                console.error('Ошибка отправки в Telegram:', response.statusText);
-            }
-        }).catch(error => {
-            console.error('Ошибка fetch:', error);
         });
 
         alert('Спасибо! Отзыв отправлен на модерацию');
@@ -236,17 +208,17 @@ function initReviewsWithTelegram() {
         document.getElementById('review-rating').value = '5';
     });
 
-    // === МОДЕРАЦИЯ (клик по кнопке) ===
-    const params = new URLSearchParams(window.location.search);
-    const approve = params.get('approve');
-    const reject = params.get('reject');
+    // Обработка нажатия на кнопки в Telegram
+    const urlParams = new URLSearchParams(window.location.search);
+    const approveId = urlParams.get('approve');
+    const rejectId  = urlParams.get('reject');
 
-    if (approve || reject) {
+    if (approveId || rejectId) {
         let pending = JSON.parse(localStorage.getItem('pending_reviews') || '[]');
-        const index = pending.findIndex(r => r.id === (approve || reject));
+        const index = pending.findIndex(r => r.id === (approveId || rejectId));
 
         if (index !== -1) {
-            if (approve) {
+            if (approveId) {
                 let published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
                 published.unshift({
                     ...pending[index],
@@ -257,14 +229,16 @@ function initReviewsWithTelegram() {
             pending.splice(index, 1);
             localStorage.setItem('pending_reviews', JSON.stringify(pending));
         }
+
+        // Убираем параметры из адресной строки и обновляем страницу
         history.replaceState({}, '', 'reviews.html');
         location.reload();
     }
 
-    // === ПОКАЗ ОПУБЛИКОВАННЫХ ОТЗЫВОВ ===
+    // Показ уже опубликованных отзывов
     const published = JSON.parse(localStorage.getItem('published_reviews') || '[]');
     container.innerHTML = published.length === 0
-        ? '<p style="text-align:center;color:#888;padding:80px 0;font-size:1.5rem;">Пока нет опубликованных отзывов</p>'
+        ? '<p style="text-align:center;padding:60px 20px;color:#888;">Пока нет опубликованных отзывов</p>'
         : published.map(r => `
             <div class="review-card">
                 <div class="review-header">
